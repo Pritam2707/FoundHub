@@ -5,6 +5,10 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/health",
+      "destination": "/api/health.js"
+    },
+    {
       "source": "/api/edgestore/(.*)",
       "destination": "/api/edgestore/[...edgestore].js"
     },
