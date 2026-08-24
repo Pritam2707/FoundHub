@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Polygon, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
   X, 
@@ -7,12 +7,12 @@ import {
   Navigation, 
   Check, 
   Search, 
-  Compass, 
   Building2,
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import { 
-  IIEST_CAMPUS_BUILDINGS, 
+  CAMPUS_LANDMARKS,
   IIEST_MAP_CENTER, 
   IIEST_MAP_ZOOM 
 } from '../types';
@@ -21,7 +21,7 @@ import {
 const pickerPinIcon = L.divIcon({
   className: 'custom-picker-pin',
   html: `
-    <div style="position: relative; display: flex; flex-direction: column; align-items: center; width: 44px; height: 50px;">
+    <div style="position: relative; display: flex; flex-direction: column; align-items: center; width: 44px; height: 50px; cursor: grab;">
       <div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, #6366F1, #4F46E5); border: 2.5px solid #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(99, 102, 241, 0.8); color: white; font-weight: bold; font-size: 16px;">
         📍
       </div>
@@ -69,35 +69,34 @@ export default function MapLocationPickerModal({
 
   if (!isOpen) return null;
 
-  // Find nearest building if clicked
+  // Find nearest landmark if clicked
   const handleMapClick = (lat, lng) => {
     setSelectedLat(lat);
     setSelectedLng(lng);
 
-    // Calculate nearest building
-    let closestBuilding = null;
+    let closest = null;
     let minDistance = Infinity;
 
-    IIEST_CAMPUS_BUILDINGS.forEach(b => {
-      const d = Math.hypot(b.center[0] - lat, b.center[1] - lng);
+    CAMPUS_LANDMARKS.forEach(b => {
+      const d = Math.hypot(b.lat - lat, b.lng - lng);
       if (d < minDistance) {
         minDistance = d;
-        closestBuilding = b;
+        closest = b;
       }
     });
 
-    if (closestBuilding && minDistance < 0.001) {
-      setLocationName(`Near ${closestBuilding.name}`);
+    if (closest && minDistance < 0.001) {
+      setLocationName(`Near ${closest.name}`);
     } else {
       setLocationName(`IIEST Campus (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
     }
   };
 
   const handleSelectBuilding = (building) => {
-    setSelectedLat(building.center[0]);
-    setSelectedLng(building.center[1]);
+    setSelectedLat(building.lat);
+    setSelectedLng(building.lng);
     setLocationName(building.name);
-    setFlyTarget(building.center);
+    setFlyTarget([building.lat, building.lng]);
   };
 
   const handleConfirm = () => {
@@ -109,9 +108,9 @@ export default function MapLocationPickerModal({
     onClose();
   };
 
-  const filteredBuildings = IIEST_CAMPUS_BUILDINGS.filter(b => 
+  const filteredBuildings = CAMPUS_LANDMARKS.filter(b => 
     b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.category.toLowerCase().includes(searchTerm.toLowerCase())
+    b.area?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -124,10 +123,10 @@ export default function MapLocationPickerModal({
             <div className="flex items-center space-x-2">
               <h2 className="text-base font-bold text-stone-900 dark:text-white">Pinpoint Location on IIEST Map</h2>
               <span className="px-2 py-0.5 text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 rounded-md">
-                Satellite Aerial Mode
+                Satellite Aerial View
               </span>
             </div>
-            <p className="text-xs text-stone-400">Click anywhere on campus or tap a building to place the pin</p>
+            <p className="text-xs text-stone-400">Click anywhere on campus aerial imagery or tap a landmark to drop the pin</p>
           </div>
           <button
             onClick={onClose}
@@ -137,7 +136,7 @@ export default function MapLocationPickerModal({
           </button>
         </div>
 
-        {/* Modal Body: Two Columns (Buildings List + Map) */}
+        {/* Modal Body */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           
           {/* Left Column: Quick Building Select */}
@@ -148,7 +147,7 @@ export default function MapLocationPickerModal({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search IIEST building..."
+                placeholder="Search IIEST location..."
                 className="w-full pl-8 pr-3 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
@@ -158,11 +157,11 @@ export default function MapLocationPickerModal({
                 IIEST Campus Landmarks
               </span>
 
-              {filteredBuildings.map((b) => {
-                const isSelected = selectedLat === b.center[0] && selectedLng === b.center[1];
+              {filteredBuildings.map((b, idx) => {
+                const isSelected = selectedLat === b.lat && selectedLng === b.lng;
                 return (
                   <button
-                    key={b.id}
+                    key={idx}
                     type="button"
                     onClick={() => handleSelectBuilding(b)}
                     className={`w-full p-2.5 rounded-xl text-left text-xs transition-all flex items-start space-x-2 border ${
@@ -171,11 +170,11 @@ export default function MapLocationPickerModal({
                         : 'bg-stone-50 dark:bg-stone-800/80 border-stone-200/80 dark:border-stone-700/80 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700'
                     }`}
                   >
-                    <Building2 className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isSelected ? 'text-white' : 'text-indigo-500'}`} />
+                    <span className="text-base leading-none">{b.emoji || '📍'}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-semibold">{b.name}</div>
+                      <div className="truncate font-semibold">{b.shortName || b.name}</div>
                       <div className={`text-[10px] truncate ${isSelected ? 'text-indigo-100' : 'text-stone-400'}`}>
-                        {b.category}
+                        {b.area}
                       </div>
                     </div>
                   </button>
@@ -184,7 +183,7 @@ export default function MapLocationPickerModal({
             </div>
           </div>
 
-          {/* Right Column: Interactive Map */}
+          {/* Right Column: Clean Satellite Map */}
           <div className="flex-1 flex flex-col">
             <div className="flex-1 relative min-h-[340px]">
               <MapContainer
@@ -209,23 +208,6 @@ export default function MapLocationPickerModal({
                 <FlyToCoords coords={flyTarget} />
                 <LocationPickerEvents onPick={handleMapClick} />
 
-                {/* Building Polygons */}
-                {IIEST_CAMPUS_BUILDINGS.map(b => (
-                  <Polygon
-                    key={b.id}
-                    positions={b.polygonExact}
-                    pathOptions={{
-                      color: b.strokeColor,
-                      fillColor: b.color,
-                      fillOpacity: 0.25,
-                      weight: 2,
-                    }}
-                    eventHandlers={{
-                      click: () => handleSelectBuilding(b),
-                    }}
-                  />
-                ))}
-
                 {/* Selected Marker */}
                 <Marker
                   position={[selectedLat, selectedLng]}
@@ -234,18 +216,18 @@ export default function MapLocationPickerModal({
 
               </MapContainer>
 
-              {/* Floating Instruction */}
+              {/* Floating Instructions */}
               <div className="absolute top-3 left-3 bg-stone-950/80 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-xs flex items-center space-x-1.5 shadow-card-dark pointer-events-none z-[1000]">
                 <MapPin className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Click anywhere on map to reposition pin</span>
+                <span>Click anywhere on campus aerial map to drop pin</span>
               </div>
             </div>
 
-            {/* Bottom Controls */}
+            {/* Bottom Confirmation Bar */}
             <div className="p-4 bg-stone-50 dark:bg-stone-800/90 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <div className="w-full sm:w-auto flex-1">
                 <label className="text-[11px] font-bold text-stone-500 dark:text-stone-400 block mb-1">
-                  Selected Landmark / Spot Name:
+                  Selected Spot / Landmark Name:
                 </label>
                 <input
                   type="text"
@@ -269,7 +251,7 @@ export default function MapLocationPickerModal({
                   className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-glow-indigo flex items-center space-x-1.5 transition-all"
                 >
                   <Check className="w-4 h-4" />
-                  <span>Use This Location</span>
+                  <span>Confirm Location</span>
                 </button>
               </div>
             </div>
