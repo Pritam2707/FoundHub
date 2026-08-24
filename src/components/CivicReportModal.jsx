@@ -6,9 +6,17 @@ import {
   Sparkles, 
   Flame,
   AlertTriangle,
-  Compass
+  Compass,
+  CheckCircle2,
+  Building2
 } from 'lucide-react';
-import { CIVIC_CATEGORIES, CAMPUS_LANDMARKS } from '../types';
+import { 
+  CIVIC_CATEGORIES, 
+  CAMPUS_LANDMARKS, 
+  IIEST_CAMPUS_PLACES,
+  isInsideCampus,
+  clampToCampus
+} from '../types';
 import { findNearbyCivicDuplicates } from '../services/matchingEngine';
 import Icon from './Icon';
 import EdgeStoreUploader from './EdgeStoreUploader';
@@ -27,22 +35,25 @@ export default function CivicReportModal({
   existingIssues,
   onUpvoteAndClose
 }) {
+  const defaultPlace = CAMPUS_LANDMARKS[0] || { name: 'Meditation Center & Clock Tower', lat: 22.556244, lng: 88.305552 };
+  
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('pothole');
   const [severity, setSeverity] = useState(3);
-  const [locationName, setLocationName] = useState(CAMPUS_LANDMARKS[0].name);
-  const [lat, setLat] = useState(CAMPUS_LANDMARKS[0].lat);
-  const [lng, setLng] = useState(CAMPUS_LANDMARKS[0].lng);
+  const [locationName, setLocationName] = useState(defaultPlace.name);
+  const [lat, setLat] = useState(defaultPlace.lat);
+  const [lng, setLng] = useState(defaultPlace.lng);
   const [imageUrl, setImageUrl] = useState(SAMPLE_PHOTOS[0].url);
   const [isGettingGps, setIsGettingGps] = useState(false);
+  const [gpsNote, setGpsNote] = useState('');
   const [ignoreDuplicate, setIgnoreDuplicate] = useState(false);
   const [nearbyDuplicates, setNearbyDuplicates] = useState([]);
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
 
   useEffect(() => {
     if (lat && lng) {
-      const duplicates = findNearbyCivicDuplicates(lat, lng, category, existingIssues, 35);
+      const duplicates = findNearbyCivicDuplicates(lat, lng, category, existingIssues, 40);
       setNearbyDuplicates(duplicates);
       setIgnoreDuplicate(false);
     }
@@ -51,28 +62,44 @@ export default function CivicReportModal({
   if (!isOpen) return null;
 
   const handleLandmarkSelect = (landmarkName) => {
-    const found = CAMPUS_LANDMARKS.find(l => l.name === landmarkName);
+    const found = IIEST_CAMPUS_PLACES.find(l => l.name === landmarkName);
     if (found) {
+      const [cLat, cLng] = clampToCampus(found.lat, found.lng);
       setLocationName(found.name);
-      setLat(found.lat);
-      setLng(found.lng);
+      setLat(cLat);
+      setLng(cLng);
+      setGpsNote('');
     }
   };
 
   const handleAutoGPS = () => {
     setIsGettingGps(true);
+    setGpsNote('');
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setLat(Number(position.coords.latitude.toFixed(5)));
-          setLng(Number(position.coords.longitude.toFixed(5)));
-          setLocationName('Live GPS Location (IIEST)');
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+
+          if (isInsideCampus(userLat, userLng)) {
+            setLat(Number(userLat.toFixed(6)));
+            setLng(Number(userLng.toFixed(6)));
+            setLocationName('Current IIEST Campus Location');
+            setGpsNote('📍 Live GPS locked inside campus');
+          } else {
+            // User is off-campus; clamp to nearest campus spot & launch map picker
+            const [cLat, cLng] = clampToCampus(userLat, userLng);
+            setLat(Number(cLat.toFixed(6)));
+            setLng(Number(cLng.toFixed(6)));
+            setLocationName('IIEST Shibpur Campus');
+            setGpsNote('⚠️ Remote GPS detected; clamped inside IIEST campus perimeter');
+            setIsMapPickerOpen(true);
+          }
           setIsGettingGps(false);
         },
         (error) => {
           console.warn('GPS error or rejected, opening map picker:', error);
           setIsGettingGps(false);
-          // If rejected or unavailable, open interactive map picker directly!
           setIsMapPickerOpen(true);
         },
         { timeout: 6000 }
@@ -84,14 +111,18 @@ export default function CivicReportModal({
   };
 
   const handleConfirmedLocationFromPicker = (loc) => {
+    const [cLat, cLng] = clampToCampus(loc.lat, loc.lng);
     setLocationName(loc.name);
-    setLat(loc.lat);
-    setLng(loc.lng);
+    setLat(cLat);
+    setLng(cLng);
+    setGpsNote('📍 Precision spot selected on aerial map');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
+
+    const [finalLat, finalLng] = clampToCampus(Number(lat), Number(lng));
 
     const newIssue = {
       id: `civic-${Date.now()}`,
@@ -105,8 +136,8 @@ export default function CivicReportModal({
       verifiedCount: 1,
       location: {
         name: locationName,
-        lat: Number(lat),
-        lng: Number(lng),
+        lat: finalLat,
+        lng: finalLng,
       },
       imageUrl,
       reporterName: 'IIEST Community',
@@ -116,7 +147,7 @@ export default function CivicReportModal({
         {
           status: 'reported',
           timestamp: new Date().toISOString(),
-          note: 'Issue submitted via CivicBloom',
+          note: 'Issue submitted via CivicBloom with campus-bound geotag',
         }
       ],
       comments: []
@@ -127,230 +158,246 @@ export default function CivicReportModal({
   };
 
   return (
-    <>
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
-        <div className="bg-white dark:bg-stone-900 w-full max-w-xl rounded-3xl border border-stone-200 dark:border-stone-800 shadow-modal overflow-hidden animate-fade-in max-h-[85vh] flex flex-col">
-          
-          {/* Header */}
-          <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+      <div className="bg-white dark:bg-stone-900 w-full max-w-2xl rounded-3xl border border-stone-200 dark:border-stone-800 shadow-modal overflow-hidden">
+        
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200 dark:border-amber-800/60 font-bold">
+              ⚠️
+            </div>
             <div>
-              <h2 className="text-base font-bold text-stone-900 dark:text-white">Report Infrastructure Issue</h2>
-              <p className="text-xs text-stone-400">Potholes, lighting faults, leaks, or hazards at IIEST</p>
+              <h2 className="text-lg font-bold text-stone-900 dark:text-white">Report Campus Infrastructure Issue</h2>
+              <p className="text-xs text-stone-400">Geotag hazards, potholes, or lighting across IIEST Shibpur</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full text-stone-400 hover:text-stone-800 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center justify-center transition-all"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Duplicate Prevention Alert */}
+        {nearbyDuplicates.length > 0 && !ignoreDuplicate && (
+          <div className="m-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80">
+            <div className="flex items-center space-x-2 text-amber-900 dark:text-amber-200 font-bold text-sm">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <span>Similar Issue Already Reported Here!</span>
+            </div>
+            <p className="text-xs text-amber-800/90 dark:text-amber-300/90 mt-1">
+              Someone reported an issue near this spot. Upvoting boosts its urgency without creating duplicates.
+            </p>
+            <div className="mt-3 space-y-2">
+              {nearbyDuplicates.map(dup => (
+                <div key={dup.id} className="p-3 bg-white dark:bg-stone-900 rounded-xl border border-amber-200/80 dark:border-amber-800/60 flex items-center justify-between">
+                  <div className="min-w-0 pr-3">
+                    <p className="font-semibold text-xs text-stone-900 dark:text-white truncate">{dup.title}</p>
+                    <p className="text-[11px] text-stone-400">📍 {dup.location?.name} · {dup.urgencyUpvotes} Votes</p>
+                  </div>
+                  <button
+                    onClick={() => onUpvoteAndClose(dup.id)}
+                    className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1 shadow-sm transition-all"
+                  >
+                    <Flame className="w-3.5 h-3.5 fill-current" />
+                    <span>Upvote Instead</span>
+                  </button>
+                </div>
+              ))}
             </div>
             <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full text-stone-400 hover:text-stone-800 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center justify-center transition-all"
+              onClick={() => setIgnoreDuplicate(true)}
+              className="mt-3 text-xs text-amber-800 dark:text-amber-300 hover:underline font-medium block text-right"
             >
-              <X className="w-4 h-4" />
+              Continue submitting new issue anyway →
+            </button>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          
+          {/* Title */}
+          <div>
+            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+              Issue Headline *
+            </label>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Streetlamp not working near Clock Tower pathway"
+              className="w-full px-3.5 py-2 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-white placeholder-stone-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
+            />
+          </div>
+
+          {/* Category Pills */}
+          <div>
+            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-2">
+              Category
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {CIVIC_CATEGORIES.map((cat) => {
+                const isSelected = category === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategory(cat.id)}
+                    className={`p-2.5 rounded-xl text-left border transition-all flex items-center space-x-2 ${
+                      isSelected
+                        ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-500 text-amber-900 dark:text-amber-200 font-bold shadow-subtle'
+                        : 'bg-stone-50 dark:bg-stone-800/80 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-100'
+                    }`}
+                  >
+                    <span className="text-base">{cat.emoji}</span>
+                    <span className="text-xs truncate">{cat.label.split('&')[0]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Location Picker Section (Strict Campus Bounded) */}
+          <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center space-x-1.5">
+                <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                <span>Campus Location (Strictly Bound)</span>
+              </label>
+
+              {/* Pinpoint on Interactive Map Button */}
+              <button
+                type="button"
+                onClick={() => setIsMapPickerOpen(true)}
+                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center space-x-1"
+              >
+                <Compass className="w-3.5 h-3.5" />
+                <span>Pinpoint on Satellite Map ↗</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Landmark Dropdown (152 Surveyed Places) */}
+              <select
+                value={locationName}
+                onChange={(e) => handleLandmarkSelect(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-500"
+              >
+                {IIEST_CAMPUS_PLACES.slice(0, 50).map((l) => (
+                  <option key={l.id} value={l.name}>
+                    {l.name} ({l.categoryLabel})
+                  </option>
+                ))}
+              </select>
+
+              {/* GPS Auto-Detect Button */}
+              <button
+                type="button"
+                onClick={handleAutoGPS}
+                disabled={isGettingGps}
+                className="px-3 py-2 rounded-xl bg-white dark:bg-stone-900 hover:bg-stone-100 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-xs font-bold flex items-center justify-center space-x-1.5 transition-all"
+              >
+                <Navigation className={`w-3.5 h-3.5 text-amber-500 ${isGettingGps ? 'animate-spin' : ''}`} />
+                <span>{isGettingGps ? 'Fetching GPS...' : 'Use Auto-GPS Fallback'}</span>
+              </button>
+            </div>
+
+            {gpsNote && (
+              <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium">
+                {gpsNote}
+              </p>
+            )}
+
+            <div className="text-[11px] text-stone-400 flex items-center justify-between font-mono pt-1">
+              <span>Coordinates: {Number(lat).toFixed(6)}° N, {Number(lng).toFixed(6)}° E</span>
+              <span className="text-emerald-500 font-bold font-sans">✓ Inside IIEST Bounds</span>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+              Details & Hazard Description
+            </label>
+            <textarea
+              rows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Add specifics like depth, exact pole number, or timing of hazard..."
+              className="w-full px-3.5 py-2 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-white placeholder-stone-400 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 font-normal"
+            />
+          </div>
+
+          {/* Photo Uploader (EdgeStore Cloud + Pre-sets) */}
+          <div>
+            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">
+              Attach Photo Proof
+            </label>
+            <EdgeStoreUploader
+              onUploadSuccess={(url) => setImageUrl(url)}
+              currentImageUrl={imageUrl}
+              category={category}
+            />
+          </div>
+
+          {/* Severity Slider */}
+          <div className="pt-1">
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
+                Urgency Level
+              </label>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                severity >= 4 ? 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300' :
+                severity >= 3 ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
+                'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+              }`}>
+                Level {severity}/5 · {severity >= 4 ? 'Critical Hazard' : severity >= 3 ? 'Moderate' : 'Low'}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="5"
+              value={severity}
+              onChange={(e) => setSeverity(e.target.value)}
+              className="w-full accent-amber-500 cursor-pointer"
+            />
+          </div>
+
+          {/* Footer Submit */}
+          <div className="pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-end space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold hover:bg-stone-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-glow-amber flex items-center space-x-1.5 transition-all"
+            >
+              <Flame className="w-3.5 h-3.5 fill-current" />
+              <span>Submit Issue Report</span>
             </button>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-            
-            {/* Category */}
-            <div>
-              <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1.5">Select Category</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                {CIVIC_CATEGORIES.map(cat => {
-                  const isSelected = category === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setCategory(cat.id)}
-                      className={`p-2 rounded-xl border text-left flex items-center space-x-1.5 transition-all ${
-                        isSelected
-                          ? 'bg-indigo-600 border-indigo-600 text-white font-bold shadow-subtle'
-                          : 'bg-stone-50 dark:bg-stone-800 border-stone-200/80 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100'
-                      }`}
-                    >
-                      <span>{cat.emoji}</span>
-                      <span className="truncate">{cat.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+        </form>
 
-            {/* Title */}
-            <div>
-              <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">Issue Headline *</label>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Deep pothole near Clock Tower curve"
-                className="w-full px-3.5 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
+        {/* Satellite Map Location Positioner Modal */}
+        <MapLocationPickerModal
+          isOpen={isMapPickerOpen}
+          onClose={() => setIsMapPickerOpen(false)}
+          onConfirmLocation={handleConfirmedLocationFromPicker}
+          initialLat={lat}
+          initialLng={lng}
+          initialName={locationName}
+        />
 
-            {/* Location & GPS with Map Positioner */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="font-bold text-stone-700 dark:text-stone-300">IIEST Campus Location</label>
-                
-                <div className="flex items-center space-x-1.5">
-                  <button
-                    type="button"
-                    onClick={handleAutoGPS}
-                    disabled={isGettingGps}
-                    className="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold flex items-center space-x-1 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-800/60"
-                  >
-                    <Navigation className={`w-3 h-3 ${isGettingGps ? 'animate-spin' : ''}`} />
-                    <span>{isGettingGps ? 'Detecting...' : 'Auto GPS'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsMapPickerOpen(true)}
-                    className="text-[11px] text-amber-700 dark:text-amber-300 font-bold flex items-center space-x-1 bg-amber-50 dark:bg-amber-950 px-2 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/60"
-                  >
-                    <Compass className="w-3 h-3 text-amber-500" />
-                    <span>Pinpoint on Map</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <select
-                  value={locationName}
-                  onChange={(e) => handleLandmarkSelect(e.target.value)}
-                  className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none"
-                >
-                  {CAMPUS_LANDMARKS.map(lm => (
-                    <option key={lm.name} value={lm.name}>
-                      {lm.name}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  type="text"
-                  value={locationName}
-                  onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="Specific spot notes (e.g. Near 2nd floor lab)..."
-                  className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none"
-                />
-              </div>
-
-              <div className="text-[11px] text-stone-500 dark:text-stone-400 flex items-center justify-between px-1">
-                <span>📍 Coords: {lat.toFixed(4)}° N, {lng.toFixed(4)}° E</span>
-                <button
-                  type="button"
-                  onClick={() => setIsMapPickerOpen(true)}
-                  className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
-                >
-                  Change pin location ➔
-                </button>
-              </div>
-            </div>
-
-            {/* DUPLICATE WARNING BANNER */}
-            {nearbyDuplicates.length > 0 && !ignoreDuplicate && (
-              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-stone-900 dark:text-white space-y-2">
-                <div className="flex items-start space-x-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-bold text-xs text-amber-900 dark:text-amber-200">
-                      Similar report nearby ({nearbyDuplicates[0].distanceMeters}m away)
-                    </h4>
-                    <p className="text-stone-600 dark:text-stone-400 text-[11px]">
-                      "{nearbyDuplicates[0].issue.title}" is already open at this location.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <button
-                    type="button"
-                    onClick={() => onUpvoteAndClose(nearbyDuplicates[0].issue.id)}
-                    className="px-3 py-1.5 bg-amber-500 text-white rounded-lg font-bold text-xs flex items-center space-x-1 shadow-subtle"
-                  >
-                    <Flame className="w-3.5 h-3.5 fill-current" />
-                    <span>Upvote Existing (+1 Priority)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIgnoreDuplicate(true)}
-                    className="text-[11px] text-stone-500 dark:text-stone-400 hover:underline"
-                  >
-                    Different issue (Continue)
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Description */}
-            <div>
-              <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">Description</label>
-              <textarea
-                rows={2}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the hazard and how long it's been present..."
-                className="w-full px-3.5 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-
-            {/* Severity */}
-            <div>
-              <div className="flex justify-between font-bold text-stone-700 dark:text-stone-300 mb-1">
-                <span>Severity Level: {severity}/5</span>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="5"
-                step="1"
-                value={severity}
-                onChange={(e) => setSeverity(e.target.value)}
-                className="w-full accent-indigo-600 cursor-pointer"
-              />
-            </div>
-
-            {/* Photo */}
-            <div>
-              <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1.5">Photo Attachment</label>
-              <EdgeStoreUploader
-                initialUrl={imageUrl}
-                onUploadComplete={(url) => setImageUrl(url)}
-              />
-            </div>
-
-            {/* Submit */}
-            <div className="pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-end space-x-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-3.5 py-2 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-glow-indigo transition-all"
-              >
-                Submit Civic Report
-              </button>
-            </div>
-
-          </form>
-
-        </div>
       </div>
-
-      {/* Interactive Satellite Map Positioner Modal */}
-      <MapLocationPickerModal
-        isOpen={isMapPickerOpen}
-        onClose={() => setIsMapPickerOpen(false)}
-        onConfirmLocation={handleConfirmedLocationFromPicker}
-        initialLat={lat}
-        initialLng={lng}
-        initialName={locationName}
-      />
-    </>
+    </div>
   );
 }

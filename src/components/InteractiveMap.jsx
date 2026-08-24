@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useState, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polygon, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { 
   MapPin, 
@@ -7,37 +7,66 @@ import {
   Navigation, 
   ExternalLink,
   Layers,
-  Compass,
   Satellite,
   Building2,
   AlertTriangle,
   HeartHandshake,
-  Sparkles
+  Crosshair,
+  Search,
+  SlidersHorizontal,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { 
-  CAMPUS_LANDMARKS, 
-  IIEST_CAMPUS_BUILDINGS, 
+  IIEST_CAMPUS_PLACES, 
   IIEST_MAP_CENTER, 
   IIEST_MAP_ZOOM, 
   IIEST_WIKI_MAP_URL 
 } from '../types';
 
-// Custom Building Landmark Pin Icon
-function createLandmarkPinIcon(name, code, emoji, color) {
+// Major prominent landmarks to show labels for by default
+const MAJOR_LANDMARK_IDS = new Set([
+  'meditation-center-and-clock-tower-9759',
+  'ramanujan-central-library-l5k9',
+  'oval-ground-r92f',
+  '1000-seater-hostel-mess-oysr',
+  'gymnasium-b94f',
+  'institute-canteen-o22d',
+  'wolfenden-hall-girls-713q',
+  '2nd-gate-iiest-773s',
+  'academic-offices-753e',
+  'department-of-computer-science-and-technology-b79e',
+  'department-of-mechanical-engineering-l69a',
+  'department-of-civil-engineering-22d7',
+  '1st-gate-lake-z87r'
+]);
+
+// Map Mouse Inspector to display live Lat/Lng
+function MapCoordinateInspector({ onMove, onZoomChange }) {
+  const map = useMapEvents({
+    mousemove(e) {
+      onMove(e.latlng.lat.toFixed(6), e.latlng.lng.toFixed(6));
+    },
+    zoomend() {
+      onZoomChange(map.getZoom());
+    }
+  });
+  return null;
+}
+
+// Minimal Clean Dot Marker for Places
+function createMinimalDotIcon(color = '#6366F1', isMajor = false) {
+  const size = isMajor ? 12 : 8;
   return L.divIcon({
-    className: 'custom-landmark-pin',
+    className: 'custom-dot-pin',
     html: `
-      <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer; transform: translate3d(0,0,0);">
-        <div style="background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(6px); border: 1.5px solid ${color}; color: #FFFFFF; padding: 2px 7px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 4px;">
-          <span>${emoji || '📍'}</span>
-          <span>${name}</span>
-          <span style="background: ${color}; color: #0F172A; font-size: 9px; font-weight: 800; padding: 0.5px 3.5px; border-radius: 4px;">${code}</span>
-        </div>
+      <div style="position: relative; display: flex; align-items: center; justify-content: center; width: ${size + 8}px; height: ${size + 8}px; cursor: pointer;">
+        <div style="width: ${size}px; height: ${size}px; border-radius: 50%; background: ${color}; border: 2px solid #FFFFFF; box-shadow: 0 2px 8px rgba(0,0,0,0.6); transition: transform 0.15s ease;"></div>
       </div>
     `,
-    iconSize: [130, 24],
-    iconAnchor: [65, 12],
-    popupAnchor: [0, -14],
+    iconSize: [size + 8, size + 8],
+    iconAnchor: [(size + 8) / 2, (size + 8) / 2],
+    popupAnchor: [0, -((size + 8) / 2)],
   });
 }
 
@@ -101,7 +130,7 @@ function MapFlyTo({ targetCoords }) {
   const map = useMap();
   React.useEffect(() => {
     if (targetCoords) {
-      map.flyTo(targetCoords, 18, { duration: 1.2 });
+      map.flyTo(targetCoords, 18.5, { duration: 1.2 });
     }
   }, [targetCoords, map]);
   return null;
@@ -114,16 +143,48 @@ export default function InteractiveMap({
   onSelectLostFound,
   isDark 
 }) {
-  const [mapEngine, setMapEngine] = useState('pins'); // 'pins' (Satellite with custom pins) or 'iiest_wiki' (Embedded wiki)
+  const [mapEngine, setMapEngine] = useState('pins'); // 'pins' or 'iiest_wiki'
   const [showCivic, setShowCivic] = useState(true);
   const [showLost, setShowLost] = useState(true);
   const [showFound, setShowFound] = useState(true);
-  const [showLandmarks, setShowLandmarks] = useState(true);
+  const [showPlaces, setShowPlaces] = useState(true);
+  const [labelDensity, setLabelDensity] = useState('major'); // 'none', 'major', 'all'
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentZoom, setCurrentZoom] = useState(17);
   const [flyCoords, setFlyCoords] = useState(null);
+  const [hoverCoords, setHoverCoords] = useState({ lat: '22.555500', lng: '88.306000' });
 
   const activeCivicCount = civicIssues.length;
   const activeLostCount = lostFoundItems.filter(i => i.type === 'lost').length;
   const activeFoundCount = lostFoundItems.filter(i => i.type === 'found').length;
+
+  // Categories list for chips
+  const categoriesList = [
+    { id: 'all', label: 'All Places' },
+    { id: 'academic', label: 'Academic & Labs' },
+    { id: 'hostel', label: 'Hostels' },
+    { id: 'canteen', label: 'Canteens & Food' },
+    { id: 'sports', label: 'Sports & Grounds' },
+    { id: 'admin', label: 'Admin & Offices' },
+    { id: 'landmark', label: 'Gates & Landmarks' },
+  ];
+
+  // Filter 152 surveyed places
+  const filteredPlaces = useMemo(() => {
+    return IIEST_CAMPUS_PLACES.filter(p => {
+      const matchCat = selectedCategory === 'all' || 
+        (selectedCategory === 'canteen' && (p.category === 'canteen' || p.category === 'mess' || p.category === 'tea' || p.category === 'food')) ||
+        (selectedCategory === 'sports' && (p.category === 'sports' || p.category === 'gym' || p.category === 'green')) ||
+        p.category === selectedCategory;
+
+      const matchSearch = !searchTerm || 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        p.categoryLabel.toLowerCase().includes(searchTerm.toLowerCase());
+
+      return matchCat && matchSearch;
+    });
+  }, [selectedCategory, searchTerm]);
 
   return (
     <div className="space-y-4 pb-16">
@@ -137,11 +198,11 @@ export default function InteractiveMap({
             </h1>
             <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-full flex items-center space-x-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{civicIssues.length + lostFoundItems.length} Live Pins Plotted</span>
+              <span>{filteredPlaces.length} Verified Spots</span>
             </span>
           </div>
           <p className="text-stone-500 dark:text-stone-400 text-xs sm:text-sm mt-0.5">
-            Geotagged infrastructure hazards, potholes, and lost possessions plotted directly over IIEST Shibpur.
+            Geotagged infrastructure hazards, potholes, and lost items over clean satellite aerial imagery.
           </p>
         </div>
 
@@ -157,7 +218,7 @@ export default function InteractiveMap({
               }`}
             >
               <Satellite className="w-3.5 h-3.5 text-sky-500" />
-              <span>Interactive Satellite Pins</span>
+              <span>Satellite Pins View</span>
             </button>
 
             <button
@@ -187,76 +248,145 @@ export default function InteractiveMap({
 
       {mapEngine === 'pins' ? (
         <>
-          {/* Controls: Pin Category Toggles & Landmark Jump Shortcuts */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            {/* Layer Filter Toggles */}
-            <div className="flex items-center gap-1.5 flex-wrap text-xs">
-              <button
-                onClick={() => setShowCivic(!showCivic)}
-                className={`px-3 py-1.5 rounded-xl font-bold border transition-all flex items-center space-x-1.5 ${
-                  showCivic 
-                    ? 'bg-amber-500 text-white border-amber-600 shadow-glow-amber' 
-                    : 'bg-white dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700'
-                }`}
-              >
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Civic Hazards ({activeCivicCount})</span>
-              </button>
-
-              <button
-                onClick={() => setShowLost(!showLost)}
-                className={`px-3 py-1.5 rounded-xl font-bold border transition-all flex items-center space-x-1.5 ${
-                  showLost 
-                    ? 'bg-pink-600 text-white border-pink-700 shadow-subtle' 
-                    : 'bg-white dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700'
-                }`}
-              >
-                <HeartHandshake className="w-3.5 h-3.5" />
-                <span>Lost Items ({activeLostCount})</span>
-              </button>
-
-              <button
-                onClick={() => setShowFound(!showFound)}
-                className={`px-3 py-1.5 rounded-xl font-bold border transition-all flex items-center space-x-1.5 ${
-                  showFound 
-                    ? 'bg-sky-600 text-white border-sky-700 shadow-subtle' 
-                    : 'bg-white dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700'
-                }`}
-              >
-                <span>📦 Found ({activeFoundCount})</span>
-              </button>
-
-              <button
-                onClick={() => setShowLandmarks(!showLandmarks)}
-                className={`px-3 py-1.5 rounded-xl font-semibold border transition-all flex items-center space-x-1.5 ${
-                  showLandmarks
-                    ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900 border-transparent shadow-subtle'
-                    : 'bg-white dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700'
-                }`}
-              >
-                <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Landmarks ({IIEST_CAMPUS_BUILDINGS.length})</span>
-              </button>
-            </div>
-
-            {/* Landmark Quick Jump Pills */}
-            <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
-              <span className="text-stone-400 font-bold text-[11px] shrink-0">Fly to:</span>
-              {IIEST_CAMPUS_BUILDINGS.slice(0, 6).map((b) => (
+          {/* Controls Bar: Issue Filters, Label Density, and Category Chips */}
+          <div className="bg-white dark:bg-stone-900 p-3 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-card space-y-2.5">
+            
+            {/* Top Row: Main Toggle Buttons */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 text-xs">
+              
+              {/* Primary Layers */}
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <button
-                  key={b.id}
-                  onClick={() => setFlyCoords(b.center)}
-                  className="whitespace-nowrap px-2.5 py-1 rounded-xl bg-white/90 dark:bg-stone-800/90 hover:bg-white dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-all flex items-center space-x-1 shadow-subtle font-medium"
+                  onClick={() => setShowCivic(!showCivic)}
+                  className={`px-3 py-1.5 rounded-xl font-bold border transition-all flex items-center space-x-1.5 ${
+                    showCivic 
+                      ? 'bg-amber-500 text-white border-amber-600 shadow-glow-amber' 
+                      : 'bg-stone-50 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700'
+                  }`}
                 >
-                  <span>{b.emoji}</span>
-                  <span>{b.shortName}</span>
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Civic Hazards ({activeCivicCount})</span>
                 </button>
-              ))}
+
+                <button
+                  onClick={() => setShowLost(!showLost)}
+                  className={`px-3 py-1.5 rounded-xl font-bold border transition-all flex items-center space-x-1.5 ${
+                    showLost 
+                      ? 'bg-pink-600 text-white border-pink-700 shadow-subtle' 
+                      : 'bg-stone-50 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700'
+                  }`}
+                >
+                  <HeartHandshake className="w-3.5 h-3.5" />
+                  <span>Lost ({activeLostCount})</span>
+                </button>
+
+                <button
+                  onClick={() => setShowFound(!showFound)}
+                  className={`px-3 py-1.5 rounded-xl font-bold border transition-all flex items-center space-x-1.5 ${
+                    showFound 
+                      ? 'bg-sky-600 text-white border-sky-700 shadow-subtle' 
+                      : 'bg-stone-50 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700'
+                  }`}
+                >
+                  <span>📦 Found ({activeFoundCount})</span>
+                </button>
+
+                <div className="h-4 w-px bg-stone-200 dark:bg-stone-700 mx-1 hidden sm:block" />
+
+                {/* Places Layer Toggle */}
+                <button
+                  onClick={() => setShowPlaces(!showPlaces)}
+                  className={`px-3 py-1.5 rounded-xl font-semibold border transition-all flex items-center space-x-1.5 ${
+                    showPlaces
+                      ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900 border-transparent shadow-subtle font-bold'
+                      : 'bg-stone-50 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700'
+                  }`}
+                >
+                  <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Campus Places ({filteredPlaces.length})</span>
+                </button>
+              </div>
+
+              {/* Right Side: Label Density Control + Search */}
+              <div className="flex items-center gap-2">
+                {showPlaces && (
+                  <div className="flex items-center bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl text-[11px] font-semibold border border-stone-200 dark:border-stone-700">
+                    <span className="text-stone-400 px-2">Labels:</span>
+                    <button
+                      onClick={() => setLabelDensity('major')}
+                      className={`px-2 py-1 rounded-lg transition-all ${
+                        labelDensity === 'major'
+                          ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-subtle font-bold'
+                          : 'text-stone-500 hover:text-stone-800 dark:hover:text-white'
+                      }`}
+                      title="Only show labels for major landmarks to avoid clutter"
+                    >
+                      Major Only
+                    </button>
+                    <button
+                      onClick={() => setLabelDensity('none')}
+                      className={`px-2 py-1 rounded-lg transition-all ${
+                        labelDensity === 'none'
+                          ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-subtle font-bold'
+                          : 'text-stone-500 hover:text-stone-800 dark:hover:text-white'
+                      }`}
+                      title="Show clean dots only without text tags (hover to view)"
+                    >
+                      Clean Dots
+                    </button>
+                    <button
+                      onClick={() => setLabelDensity('all')}
+                      className={`px-2 py-1 rounded-lg transition-all ${
+                        labelDensity === 'all'
+                          ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-subtle font-bold'
+                          : 'text-stone-500 hover:text-stone-800 dark:hover:text-white'
+                      }`}
+                      title="Show text labels on all places"
+                    >
+                      All Labels
+                    </button>
+                  </div>
+                )}
+
+                {/* Place Search */}
+                <div className="relative min-w-[180px]">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search places..."
+                    className="w-full pl-8 pr-3 py-1 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
             </div>
+
+            {/* Bottom Row: Category Filter Chips */}
+            {showPlaces && (
+              <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs border-t border-stone-100 dark:border-stone-800 pt-2">
+                <span className="text-stone-400 font-bold text-[11px] shrink-0 mr-1">Filter:</span>
+                {categoriesList.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`whitespace-nowrap px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all border ${
+                      selectedCategory === cat.id
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-subtle font-bold'
+                        : 'bg-stone-50 dark:bg-stone-800/70 text-stone-600 dark:text-stone-400 border-stone-200/80 dark:border-stone-700/80 hover:bg-stone-100'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
           </div>
 
-          {/* Leaflet Satellite Map Container with all pins plotted */}
-          <div className="w-full h-[600px] rounded-3xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-card-dark relative">
+          {/* Leaflet Satellite Map Container */}
+          <div className="w-full h-[620px] rounded-3xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-card-dark relative">
             <MapContainer
               center={IIEST_MAP_CENTER}
               zoom={IIEST_MAP_ZOOM}
@@ -279,35 +409,69 @@ export default function InteractiveMap({
               />
 
               <MapFlyTo targetCoords={flyCoords} />
+              <MapCoordinateInspector 
+                onMove={(lat, lng) => setHoverCoords({ lat, lng })}
+                onZoomChange={(z) => setCurrentZoom(z)}
+              />
 
-              {/* Campus Landmark Building Pins */}
-              {showLandmarks && IIEST_CAMPUS_BUILDINGS.map((building) => {
-                const labelIcon = createLandmarkPinIcon(building.shortName, building.code, building.emoji, building.color);
+              {/* 152 EXACT SURVEYED PLACES & BUILDING POLYGONS */}
+              {showPlaces && filteredPlaces.map((place) => {
+                const isMajor = MAJOR_LANDMARK_IDS.has(place.id);
+                const showPermanentLabel = labelDensity === 'all' || (labelDensity === 'major' && isMajor) || (currentZoom >= 19);
 
                 return (
-                  <Marker
-                    key={building.id}
-                    position={building.center}
-                    icon={labelIcon}
-                  >
-                    <Popup>
-                      <div className="p-3 text-stone-900 dark:text-white text-xs font-sans space-y-1.5 max-w-xs bg-white dark:bg-stone-900 rounded-2xl">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded">
-                            {building.category}
-                          </span>
-                          <span className="font-mono text-stone-400 font-bold">{building.code}</span>
+                  <React.Fragment key={place.id}>
+                    {/* Exact Surveyed Polygon Boundary if available */}
+                    {place.polygon && (
+                      <Polygon
+                        positions={place.polygon}
+                        pathOptions={{
+                          color: place.color || '#6366F1',
+                          fillColor: place.color || '#6366F1',
+                          fillOpacity: 0.18,
+                          weight: 1.5,
+                        }}
+                      />
+                    )}
+
+                    {/* Clean Dot Marker with High-Contrast White Text Tooltip */}
+                    <Marker
+                      position={[place.lat, place.lng]}
+                      icon={createMinimalDotIcon(place.color, isMajor)}
+                    >
+                      {/* Tooltip for clean label preview on hover / permanent on major */}
+                      <Tooltip
+                        permanent={showPermanentLabel}
+                        direction="top"
+                        offset={[0, -8]}
+                        className="custom-clean-map-tooltip"
+                      >
+                        <span className="font-sans font-bold text-[11px] text-white tracking-wide">
+                          {place.name}
+                        </span>
+                      </Tooltip>
+
+                      <Popup>
+                        <div className="p-3.5 text-stone-900 dark:text-white text-xs font-sans space-y-1.5 max-w-xs bg-white dark:bg-stone-900 rounded-2xl shadow-card">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded">
+                              {place.categoryLabel}
+                            </span>
+                            <span className="font-mono text-stone-400 text-[10px]">{place.id}</span>
+                          </div>
+                          
+                          <h4 className="font-bold text-sm leading-snug text-stone-900 dark:text-white">{place.name}</h4>
+                          {place.details && (
+                            <p className="text-stone-500 dark:text-stone-400 text-xs leading-relaxed">{place.details}</p>
+                          )}
+                          
+                          <div className="pt-1 text-[11px] text-stone-500 dark:text-stone-400 border-t border-stone-100 dark:border-stone-800">
+                            📍 {place.lat.toFixed(6)}° N, {place.lng.toFixed(6)}° E
+                          </div>
                         </div>
-                        
-                        <h4 className="font-bold text-sm leading-snug">{building.name}</h4>
-                        <p className="text-stone-500 dark:text-stone-400 text-xs leading-relaxed">{building.description}</p>
-                        
-                        <div className="pt-1 text-[11px] text-stone-400 border-t border-stone-100 dark:border-stone-800">
-                          📍 {building.center[0].toFixed(4)}° N, {building.center[1].toFixed(4)}° E
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
+                      </Popup>
+                    </Marker>
+                  </React.Fragment>
                 );
               })}
 
@@ -323,7 +487,7 @@ export default function InteractiveMap({
                     icon={icon}
                   >
                     <Popup>
-                      <div className="p-3.5 max-w-xs space-y-2 text-stone-900 font-sans text-xs bg-white dark:bg-stone-900 dark:text-white rounded-2xl">
+                      <div className="p-3.5 max-w-xs space-y-2 text-stone-900 font-sans text-xs bg-white dark:bg-stone-900 dark:text-white rounded-2xl shadow-card">
                         <div className="flex items-center justify-between text-[10px]">
                           <span className="font-bold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                             {issue.category.replace('_', ' ')}
@@ -372,7 +536,7 @@ export default function InteractiveMap({
                     icon={icon}
                   >
                     <Popup>
-                      <div className="p-3.5 max-w-xs space-y-2 text-stone-900 font-sans text-xs bg-white dark:bg-stone-900 dark:text-white rounded-2xl">
+                      <div className="p-3.5 max-w-xs space-y-2 text-stone-900 font-sans text-xs bg-white dark:bg-stone-900 dark:text-white rounded-2xl shadow-card">
                         <div className="flex items-center justify-between text-[10px]">
                           <span className={`font-bold px-2 py-0.5 rounded ${
                             item.status === 'reunited' ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' :
@@ -405,6 +569,13 @@ export default function InteractiveMap({
               })}
 
             </MapContainer>
+
+            {/* Live Cursor Coordinate HUD */}
+            <div className="absolute bottom-3 left-3 bg-stone-950/85 backdrop-blur-md border border-stone-700/80 text-white px-3 py-1.5 rounded-xl text-[11px] font-mono flex items-center space-x-2 shadow-card-dark pointer-events-none z-[1000]">
+              <Crosshair className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{hoverCoords.lat}° N, {hoverCoords.lng}° E</span>
+            </div>
+
           </div>
         </>
       ) : (
