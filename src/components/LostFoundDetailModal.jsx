@@ -5,20 +5,17 @@ import {
   Clock, 
   Sparkles, 
   HeartHandshake, 
-  MessageSquare, 
   Send, 
   Lock, 
   Award, 
   CheckCircle2, 
-  ShieldCheck, 
   User, 
   Mail, 
   ArrowRight,
-  HelpCircle,
   Share2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { LOST_FOUND_CATEGORIES, LOST_FOUND_STATUSES } from '../types';
+import { LOST_FOUND_CATEGORIES } from '../types';
 import { findMatchesForPost } from '../services/matchingEngine';
 import Icon from './Icon';
 
@@ -32,12 +29,11 @@ export default function LostFoundDetailModal({
 }) {
   const [commentText, setCommentText] = useState('');
   const [claimAnswer, setClaimAnswer] = useState('');
-  const [claimSenderContact, setClaimSenderContact] = useState('');
+  const [claimContact, setClaimContact] = useState('');
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimSubmitted, setClaimSubmitted] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Compute smart matches for this post
   const smartMatches = useMemo(() => {
     if (!item) return [];
     return findMatchesForPost(item, allItems, 45);
@@ -74,14 +70,11 @@ export default function LostFoundDetailModal({
     setClaimSubmitted(true);
     setIsClaiming(false);
 
-    // Also auto-post a comment about the claim
     const claimNote = {
       id: `lfc-${Date.now()}`,
-      author: 'System Claim Request',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-      text: `Ownership claim submitted by ${claimSenderContact || 'claimant'}. Verification answer sent to poster.`,
+      author: 'Claim Request',
+      text: `Ownership claim submitted by ${claimContact || 'claimant'}. Verification answer sent to poster.`,
       timestamp: new Date().toISOString(),
-      isOfficial: true,
     };
     onAddComment(item.id, claimNote);
   };
@@ -91,7 +84,7 @@ export default function LostFoundDetailModal({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#A7F3D0', '#DDD6FE', '#BAE6FD', '#FED7AA']
+      colors: ['#10B981', '#6366F1', '#38BDF8', '#F59E0B']
     });
     onMarkReunited(item.id);
   };
@@ -103,56 +96,53 @@ export default function LostFoundDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
-      <div className="bg-surface w-full max-w-3xl rounded-3xl border border-stone-200/80 shadow-soft-lg overflow-hidden animate-slide-up max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+      <div className="bg-white w-full max-w-2xl rounded-3xl border border-stone-200 shadow-modal overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/70">
-          <div className="flex items-center space-x-2.5">
+        <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
             {isReunited ? (
-              <span className="px-3 py-1 rounded-xl text-xs font-bold bg-pastel-mint text-pastel-mint-dark border border-pastel-mint-border">
-                Reunited 🎉
+              <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                Reunited
               </span>
             ) : isLost ? (
-              <span className="px-3 py-1 rounded-xl text-xs font-bold bg-pastel-peach text-pastel-peach-dark border border-pastel-peach-border">
-                LOST ITEM
+              <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
+                Lost Item
               </span>
             ) : (
-              <span className="px-3 py-1 rounded-xl text-xs font-bold bg-pastel-sky text-pastel-sky-dark border border-pastel-sky-border">
-                FOUND ITEM
+              <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+                Found Item
               </span>
             )}
 
-            <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-xl text-xs font-semibold bg-pastel-lavender-light text-pastel-lavender-dark border border-pastel-lavender-border/60">
-              <Icon name={currentCategory.icon} className="w-3.5 h-3.5" />
-              <span>{currentCategory.label}</span>
+            <span className="text-xs font-medium text-stone-500 bg-stone-100 px-2.5 py-1 rounded-md">
+              {currentCategory.label}
             </span>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5">
             <button
               onClick={handleShare}
-              className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-stone-500 hover:text-stone-800 hover:bg-stone-100 flex items-center space-x-1 transition-all"
+              className="px-2.5 py-1 rounded-lg text-xs font-medium text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-all flex items-center space-x-1"
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span>{copiedLink ? 'Copied!' : 'Share'}</span>
+              <span>{copiedLink ? 'Copied' : 'Share'}</span>
             </button>
-
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition-all"
+              className="w-8 h-8 rounded-full text-stone-400 hover:text-stone-800 hover:bg-stone-100 flex items-center justify-center transition-all"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Modal Scroll Content */}
-        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+        {/* Content */}
+        <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
           
-          {/* Main Title & Meta */}
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-brand-dark leading-tight">
+            <h2 className="text-lg sm:text-xl font-bold text-stone-900 leading-snug">
               {item.title}
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-stone-500">
@@ -165,216 +155,164 @@ export default function LostFoundDetailModal({
                 <span>{new Date(item.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
               </span>
               <span className="flex items-center space-x-1 text-stone-700 font-medium">
-                <MapPin className="w-3.5 h-3.5 text-pastel-lavender-dark" />
+                <MapPin className="w-3.5 h-3.5 text-stone-400" />
                 <span>{item.locationName}</span>
               </span>
             </div>
           </div>
 
-          {/* Media & Details Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Media & Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {item.imageUrl && (
-              <div className="rounded-2xl overflow-hidden border border-stone-200/70 bg-stone-100 aspect-video md:aspect-square max-h-72">
-                <img
-                  src={item.imageUrl}
-                  alt={item.title}
-                  className="w-full h-full object-cover"
-                />
+              <div className="rounded-2xl overflow-hidden border border-stone-200 bg-stone-100 aspect-video md:aspect-square max-h-60">
+                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
               </div>
             )}
 
-            <div className="flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                {/* Attributes pill grid */}
-                <div className="flex flex-wrap gap-1.5 text-xs">
+            <div className="flex flex-col justify-between space-y-3">
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-1.5">
                   {item.color && (
-                    <span className="px-2.5 py-1 rounded-xl bg-stone-100 text-stone-700 font-medium border border-stone-200">
+                    <span className="px-2 py-0.5 rounded bg-stone-100 text-stone-700">
                       Color: <strong>{item.color}</strong>
                     </span>
                   )}
                   {item.brand && (
-                    <span className="px-2.5 py-1 rounded-xl bg-stone-100 text-stone-700 font-medium border border-stone-200">
+                    <span className="px-2 py-0.5 rounded bg-stone-100 text-stone-700">
                       Brand: <strong>{item.brand}</strong>
                     </span>
                   )}
                   {item.reward && (
-                    <span className="px-2.5 py-1 rounded-xl bg-pastel-butter-light text-pastel-butter-dark font-bold border border-pastel-butter-border flex items-center space-x-1">
-                      <Award className="w-3.5 h-3.5" />
-                      <span>Reward: {item.reward}</span>
+                    <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                      Reward: {item.reward}
                     </span>
                   )}
                 </div>
 
-                <div className="bg-stone-50/80 p-4 rounded-2xl border border-stone-200/60">
-                  <h4 className="text-xs font-bold text-stone-600 uppercase tracking-wider mb-1">
-                    Details & Distinctive Markings
-                  </h4>
-                  <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">
-                    {item.description}
-                  </p>
+                <div className="bg-stone-50 p-3.5 rounded-2xl border border-stone-200/80">
+                  <h4 className="font-semibold text-stone-700 mb-1">Details & Markings</h4>
+                  <p className="text-stone-600 leading-relaxed">{item.description}</p>
                 </div>
 
                 {item.posterContact && (
-                  <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 flex items-center space-x-2 text-xs text-stone-600">
-                    <Mail className="w-3.5 h-3.5 text-stone-400" />
-                    <span>Contact: <strong>{item.posterContact}</strong></span>
+                  <div className="text-stone-500">
+                    Contact: <strong className="text-stone-800">{item.posterContact}</strong>
                   </div>
                 )}
               </div>
 
-              {/* Action Buttons: Claim, Reunite */}
-              <div className="space-y-2 pt-2">
-                {!isReunited && (
-                  <div className="flex flex-wrap gap-2">
-                    {/* Claim Button for Found item */}
-                    {!isLost && (
-                      <button
-                        onClick={() => setIsClaiming(!isClaiming)}
-                        className="flex-1 py-2.5 px-4 bg-brand-primary text-white text-xs font-bold rounded-2xl hover:bg-brand-primaryHover shadow-soft-sm transition-all flex items-center justify-center space-x-1.5"
-                      >
-                        <HeartHandshake className="w-4 h-4" />
-                        <span>Claim This Item (I am the Owner)</span>
-                      </button>
-                    )}
-
-                    {/* Mark Reunited Button */}
+              {/* Actions */}
+              {!isReunited && (
+                <div className="flex gap-2 pt-2">
+                  {!isLost && (
                     <button
-                      onClick={triggerReunitedCelebration}
-                      className="py-2.5 px-4 bg-pastel-mint text-pastel-mint-dark text-xs font-bold rounded-2xl border border-pastel-mint-border hover:bg-pastel-mint-border transition-all flex items-center justify-center space-x-1.5 shadow-soft-sm"
+                      onClick={() => setIsClaiming(!isClaiming)}
+                      className="flex-1 py-2 px-3 bg-stone-900 text-white rounded-xl font-semibold hover:bg-stone-800 transition-all flex items-center justify-center space-x-1"
                     >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Mark as Reunited 🎉</span>
+                      <HeartHandshake className="w-3.5 h-3.5" />
+                      <span>Claim Item</span>
                     </button>
-                  </div>
-                )}
-
-                {claimSubmitted && (
-                  <div className="p-3 rounded-xl bg-pastel-mint-light border border-pastel-mint-border text-xs text-pastel-mint-dark font-medium flex items-center space-x-2">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Your claim request and verification details were sent to the finder!</span>
-                  </div>
-                )}
-              </div>
-
-            </div>
-          </div>
-
-          {/* CLAIM VERIFICATION FORM MODAL/DRAWER */}
-          {isClaiming && !isReunited && (
-            <form onSubmit={handleClaimSubmit} className="p-4.5 rounded-2xl bg-pastel-lavender-light/90 border-2 border-pastel-lavender-border space-y-3 animate-slide-up">
-              <div className="flex items-center space-x-2 text-xs font-bold text-pastel-lavender-dark">
-                <Lock className="w-4 h-4" />
-                <span>Verify Ownership to Claim</span>
-              </div>
-
-              {item.secretQuestion ? (
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Finder's Verification Question: <em>"{item.secretQuestion}"</em>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={claimAnswer}
-                    onChange={(e) => setClaimAnswer(e.target.value)}
-                    placeholder="Enter the correct answer or describe your unique identifier..."
-                    className="w-full px-3 py-2 bg-white border border-pastel-lavender-border rounded-xl text-xs focus:outline-none"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Describe unique marks or proof of ownership
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={claimAnswer}
-                    onChange={(e) => setClaimAnswer(e.target.value)}
-                    placeholder="e.g. Serial number, scratch on bottom, lockscreen photo..."
-                    className="w-full px-3 py-2 bg-white border border-pastel-lavender-border rounded-xl text-xs focus:outline-none"
-                  />
+                  )}
+                  <button
+                    onClick={triggerReunitedCelebration}
+                    className="py-2 px-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-all flex items-center justify-center space-x-1 shadow-subtle"
+                  >
+                    <span>Mark Reunited</span>
+                  </button>
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Your Contact Email / Phone
-                </label>
+              {claimSubmitted && (
+                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-center font-medium">
+                  Claim verification details sent to poster!
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Claim Box */}
+          {isClaiming && !isReunited && (
+            <form onSubmit={handleClaimSubmit} className="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-2.5">
+              <h4 className="font-bold text-stone-900">Verify Ownership</h4>
+              {item.secretQuestion ? (
+                <div>
+                  <label className="block text-stone-600 mb-1">
+                    Question: <em>"{item.secretQuestion}"</em>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={claimAnswer}
+                    onChange={(e) => setClaimAnswer(e.target.value)}
+                    placeholder="Enter answer..."
+                    className="w-full px-3 py-1.5 bg-white border border-stone-200 rounded-lg"
+                  />
+                </div>
+              ) : (
                 <input
                   type="text"
                   required
-                  value={claimSenderContact}
-                  onChange={(e) => setClaimSenderContact(e.target.value)}
-                  placeholder="e.g. myemail@campus.edu or (555) 234-5678"
-                  className="w-full px-3 py-2 bg-white border border-pastel-lavender-border rounded-xl text-xs focus:outline-none"
+                  value={claimAnswer}
+                  onChange={(e) => setClaimAnswer(e.target.value)}
+                  placeholder="Describe serial number or proof of ownership..."
+                  className="w-full px-3 py-1.5 bg-white border border-stone-200 rounded-lg"
                 />
-              </div>
+              )}
 
-              <div className="flex justify-end space-x-2 pt-1">
+              <input
+                type="text"
+                required
+                value={claimContact}
+                onChange={(e) => setClaimContact(e.target.value)}
+                placeholder="Your email or phone number..."
+                className="w-full px-3 py-1.5 bg-white border border-stone-200 rounded-lg"
+              />
+
+              <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsClaiming(false)}
-                  className="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-50"
+                  className="px-3 py-1 bg-stone-200 text-stone-700 rounded-lg"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-brand-primary text-white rounded-xl text-xs font-bold hover:bg-brand-primaryHover shadow-soft-sm"
+                  className="px-3 py-1 bg-stone-900 text-white rounded-lg font-semibold"
                 >
-                  Submit Claim Verification
+                  Submit Claim
                 </button>
               </div>
             </form>
           )}
 
-          {/* SMART MATCHES DRAWER */}
+          {/* Smart Match Suggestion Drawer */}
           {smartMatches.length > 0 && !isReunited && (
-            <div className="p-4 rounded-2xl bg-surface border border-stone-200/80 shadow-soft-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider flex items-center space-x-1.5">
-                  <Sparkles className="w-4 h-4 text-brand-primary" />
-                  <span>Smart Matching Suggestions ({smartMatches.length})</span>
-                </h3>
-                <span className="text-[11px] text-stone-400">Multi-Factor NLP & Distance Engine</span>
+            <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-2">
+              <div className="flex items-center space-x-1.5 font-bold text-indigo-950">
+                <Sparkles className="w-4 h-4 text-indigo-600" />
+                <span>Smart Match Suggestions ({smartMatches.length})</span>
               </div>
 
-              <div className="space-y-2.5">
-                {smartMatches.map((match, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3.5 rounded-2xl bg-stone-50 hover:bg-pastel-lavender-light/40 border border-stone-200/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          match.matchedItem.type === 'found' ? 'bg-pastel-mint-light text-pastel-mint-dark' : 'bg-pastel-peach-light text-pastel-peach-dark'
-                        }`}>
-                          {match.matchedItem.type.toUpperCase()}
-                        </span>
-                        <h4 className="font-bold text-xs text-stone-900">{match.matchedItem.title}</h4>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1.5 pt-0.5">
-                        {match.reasons.map((r, i) => (
-                          <span key={i} className="text-[10px] text-stone-500 bg-white px-2 py-0.5 rounded-md border border-stone-200/60">
-                            ✓ {r}
-                          </span>
-                        ))}
-                      </div>
+              <div className="space-y-2">
+                {smartMatches.map((m, idx) => (
+                  <div key={idx} className="p-3 bg-white rounded-xl border border-indigo-100 flex items-center justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-stone-900">{m.matchedItem.title}</span>
+                      <span className="block text-[11px] text-stone-500">
+                        {m.reasons.join(' • ')}
+                      </span>
                     </div>
 
-                    <div className="flex items-center space-x-2 shrink-0 self-end sm:self-center">
-                      <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-pastel-lavender-light text-pastel-lavender-dark border border-pastel-lavender-border">
-                        {match.score}% Match
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold">
+                        {m.score}%
                       </span>
                       <button
-                        onClick={() => onSelectItem(match.matchedItem)}
-                        className="px-3 py-1 bg-white border border-stone-200 hover:border-brand-primary text-brand-primary text-xs font-semibold rounded-xl flex items-center space-x-1"
+                        onClick={() => onSelectItem(m.matchedItem)}
+                        className="px-2.5 py-1 bg-stone-900 text-white rounded-lg font-semibold hover:bg-stone-800"
                       >
-                        <span>View</span>
-                        <ArrowRight className="w-3 h-3" />
+                        View
                       </button>
                     </div>
                   </div>
@@ -383,62 +321,36 @@ export default function LostFoundDetailModal({
             </div>
           )}
 
-          {/* SIGHTING TIPS & COMMENTS */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider flex items-center space-x-1.5">
-              <MessageSquare className="w-4 h-4 text-stone-500" />
-              <span>Sightings & Community Tips ({item.comments?.length || 0})</span>
-            </h3>
+          {/* Tips / Comments */}
+          <div className="space-y-2 pt-2">
+            <h4 className="font-semibold text-stone-800">Sighting Tips ({item.comments?.length || 0})</h4>
 
-            {/* Comments List */}
-            <div className="space-y-2">
+            <div className="space-y-1.5 max-h-36 overflow-y-auto">
               {item.comments && item.comments.length > 0 ? (
-                item.comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="p-3 rounded-2xl bg-stone-50 border border-stone-200/70 text-xs space-y-1"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-1.5">
-                        <span className="font-bold text-stone-800">{comment.author}</span>
-                        {comment.isOfficial && (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-pastel-lavender text-pastel-lavender-dark">
-                            VERIFIED
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-stone-400">
-                        {new Date(comment.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-
-                    <p className="text-stone-700 leading-relaxed">
-                      {comment.text}
-                    </p>
+                item.comments.map(c => (
+                  <div key={c.id} className="p-2.5 bg-stone-50 rounded-xl border border-stone-200/70">
+                    <span className="font-semibold text-stone-800">{c.author}: </span>
+                    <span className="text-stone-600">{c.text}</span>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-5 bg-stone-50 rounded-2xl border border-stone-200/60 text-xs text-stone-400">
-                  No tips posted yet. Saw this item anywhere? Leave a sighting tip below!
-                </div>
+                <div className="text-stone-400 py-2">No sighting tips yet.</div>
               )}
             </div>
 
-            {/* Post Sighting Tip */}
-            <form onSubmit={handleCommentSubmit} className="pt-2 flex items-center space-x-2">
+            <form onSubmit={handleCommentSubmit} className="flex gap-2">
               <input
                 type="text"
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Post a tip (e.g. 'Saw a similar bottle near library counter 2 hours ago')..."
-                className="flex-1 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                placeholder="Leave a sighting tip..."
+                className="flex-1 px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl"
               />
               <button
                 type="submit"
-                className="px-4 py-2.5 bg-brand-primary text-white rounded-2xl text-xs font-bold hover:bg-brand-primaryHover transition-all flex items-center space-x-1"
+                className="px-3 py-1.5 bg-stone-900 text-white rounded-xl font-semibold"
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>Post Tip</span>
+                Send
               </button>
             </form>
           </div>

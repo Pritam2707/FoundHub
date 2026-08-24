@@ -5,15 +5,11 @@ import {
   Clock, 
   MessageSquare, 
   CheckCircle2, 
-  Filter, 
+  Search, 
   ArrowUpDown, 
-  AlertTriangle,
-  Search,
+  Plus, 
   Check,
-  Sparkles,
-  ChevronRight,
-  TrendingUp,
-  ShieldAlert
+  Filter
 } from 'lucide-react';
 import { CIVIC_CATEGORIES, CIVIC_STATUSES } from '../types';
 import Icon from './Icon';
@@ -27,23 +23,20 @@ export default function CivicIssuesView({
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('urgency'); // 'urgency', 'severity', 'recent', 'upvotes'
+  const [sortBy, setSortBy] = useState('urgency');
 
   // Filtered and Sorted Issues
   const filteredIssues = useMemo(() => {
     let result = [...issues];
 
-    // Filter by Category
     if (selectedCategory !== 'all') {
       result = result.filter(item => item.category === selectedCategory);
     }
 
-    // Filter by Status
     if (selectedStatus !== 'all') {
       result = result.filter(item => item.status === selectedStatus);
     }
 
-    // Filter by Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -54,10 +47,8 @@ export default function CivicIssuesView({
       );
     }
 
-    // Sort by criteria
     result.sort((a, b) => {
       if (sortBy === 'urgency') {
-        // Urgency score calculated by upvotes + severity + verification
         const scoreA = (a.urgencyUpvotes || 0) * 2 + (a.severity || 1) * 3 + (a.verifiedCount || 0);
         const scoreB = (b.urgencyUpvotes || 0) * 2 + (b.severity || 1) * 3 + (b.verifiedCount || 0);
         return scoreB - scoreA;
@@ -77,23 +68,12 @@ export default function CivicIssuesView({
     return result;
   }, [issues, selectedCategory, selectedStatus, searchQuery, sortBy]);
 
-  // Quick Overview Stats
-  const stats = useMemo(() => {
-    const total = issues.length;
-    const reported = issues.filter(i => i.status === 'reported').length;
-    const inProgress = issues.filter(i => i.status === 'in_progress' || i.status === 'acknowledged').length;
-    const resolved = issues.filter(i => i.status === 'resolved').length;
-    const topUrgent = issues.reduce((max, cur) => cur.urgencyUpvotes > max ? cur.urgencyUpvotes : max, 0);
-
-    return { total, reported, inProgress, resolved, topUrgent };
-  }, [issues]);
-
   const getStatusInfo = (statusId) => {
     return CIVIC_STATUSES.find(s => s.id === statusId) || CIVIC_STATUSES[0];
   };
 
   const getCategoryInfo = (catId) => {
-    return CIVIC_CATEGORIES.find(c => c.id === catId) || { label: catId, color: 'sand', icon: 'AlertCircle' };
+    return CIVIC_CATEGORIES.find(c => c.id === catId) || { label: catId, icon: 'AlertCircle', tagColor: 'bg-stone-100 text-stone-700' };
   };
 
   const timeAgo = (dateStr) => {
@@ -106,172 +86,110 @@ export default function CivicIssuesView({
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-16">
       
-      {/* Top Hero Banner with Soft Pastel Accent */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-pastel-peach-light/90 via-pastel-lavender-light/80 to-pastel-mint-light/90 p-6 sm:p-8 border border-stone-200/60 shadow-soft-sm">
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/80 border border-stone-200/60 text-xs font-semibold text-brand-dark mb-3">
-            <TrendingUp className="w-3.5 h-3.5 text-pastel-peach-dark" />
-            <span>Community-Driven Civic Prioritization</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-brand-dark">
-            Report Civic Issues & Potholes
+      {/* Clean Minimal Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900">
+            Civic Issues & Hazards
           </h1>
-          <p className="text-stone-600 text-sm sm:text-base mt-1.5 leading-relaxed">
-            Report broken infrastructure, safety hazards, and road potholes. Community urgency upvotes surface the most critical problems directly to facility teams.
+          <p className="text-stone-500 text-xs sm:text-sm mt-0.5">
+            Community upvotes surface the most critical campus infrastructure problems directly to facility teams.
           </p>
-
-          <div className="mt-4 flex flex-wrap gap-2 sm:gap-3">
-            <button
-              onClick={() => onOpenReportModal('civic')}
-              className="inline-flex items-center space-x-2 px-4 py-2 rounded-2xl bg-brand-dark text-white text-sm font-semibold hover:bg-stone-800 transition-all shadow-soft-sm"
-            >
-              <span>+ Report an Issue</span>
-            </button>
-            <div className="flex items-center space-x-1.5 text-xs text-stone-500 bg-white/70 px-3 py-2 rounded-2xl border border-stone-200/50">
-              <Sparkles className="w-3.5 h-3.5 text-brand-primary" />
-              <span>Smart GPS duplicate detection enabled</span>
-            </div>
-          </div>
         </div>
 
-        {/* Floating Abstract Pastel Blobs */}
-        <div className="absolute -right-8 -bottom-8 w-48 h-48 rounded-full bg-pastel-peach/30 blur-2xl pointer-events-none" />
-        <div className="absolute right-32 -top-8 w-44 h-44 rounded-full bg-pastel-mint/30 blur-2xl pointer-events-none" />
-      </div>
-
-      {/* Metric Quick Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-surface p-4 rounded-2xl border border-stone-200/70 shadow-soft-sm flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-pastel-peach-light flex items-center justify-center text-pastel-peach-dark">
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-brand-dark">{stats.total}</div>
-            <div className="text-xs text-stone-500">Total Tracked</div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-4 rounded-2xl border border-stone-200/70 shadow-soft-sm flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-pastel-butter-light flex items-center justify-center text-pastel-butter-dark">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-brand-dark">{stats.reported}</div>
-            <div className="text-xs text-stone-500">Awaiting Review</div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-4 rounded-2xl border border-stone-200/70 shadow-soft-sm flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-pastel-sky-light flex items-center justify-center text-pastel-sky-dark">
-            <Flame className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-brand-dark">{stats.inProgress}</div>
-            <div className="text-xs text-stone-500">In Active Repair</div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-4 rounded-2xl border border-stone-200/70 shadow-soft-sm flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-pastel-mint-light flex items-center justify-center text-pastel-mint-dark">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-brand-dark">{stats.resolved}</div>
-            <div className="text-xs text-stone-500">Resolved & Fixed</div>
-          </div>
+        <div className="flex items-center space-x-2 shrink-0">
+          <button
+            onClick={() => onOpenReportModal('civic')}
+            className="px-3.5 py-2 rounded-xl bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 transition-all flex items-center space-x-1.5 shadow-subtle"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Report an Issue</span>
+          </button>
         </div>
       </div>
 
-      {/* Controls Bar: Search, Category Pills, Status & Sorting */}
-      <div className="bg-surface p-4 rounded-3xl border border-stone-200/70 shadow-soft-sm space-y-3.5">
-        
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      {/* Clean Minimal Search & Filter Bar */}
+      <div className="bg-white p-3.5 rounded-2xl border border-stone-200/80 shadow-subtle space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+          
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by issue title, landmark, or description..."
-              className="w-full pl-9 pr-4 py-2.5 bg-stone-50 border border-stone-200/70 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all placeholder:text-stone-400"
+              placeholder="Search issues, road potholes, landmarks..."
+              className="w-full pl-9 pr-4 py-2 bg-stone-50/80 hover:bg-stone-50 focus:bg-white border border-stone-200/80 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-stone-900 transition-all placeholder:text-stone-400"
             />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 hover:text-stone-600 bg-stone-200/60 rounded-full px-1.5 py-0.5"
-              >
-                Clear
-              </button>
-            )}
           </div>
 
-          {/* Status and Sort Controls */}
+          {/* Status & Sort Controls */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Status Filter */}
-            <div className="flex items-center bg-stone-50 p-1 rounded-2xl border border-stone-200/70 text-xs">
+            {/* Status Pills */}
+            <div className="flex items-center bg-stone-100 p-0.5 rounded-xl text-xs font-medium">
               <button
                 onClick={() => setSelectedStatus('all')}
-                className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
-                  selectedStatus === 'all' ? 'bg-white shadow-soft-sm text-brand-dark' : 'text-stone-500 hover:text-stone-700'
+                className={`px-2.5 py-1 rounded-lg transition-all ${
+                  selectedStatus === 'all' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
                 }`}
               >
-                All Status
+                All
               </button>
               <button
                 onClick={() => setSelectedStatus('reported')}
-                className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
-                  selectedStatus === 'reported' ? 'bg-white shadow-soft-sm text-brand-dark' : 'text-stone-500 hover:text-stone-700'
+                className={`px-2.5 py-1 rounded-lg transition-all ${
+                  selectedStatus === 'reported' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
                 }`}
               >
                 Reported
               </button>
               <button
                 onClick={() => setSelectedStatus('in_progress')}
-                className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
-                  selectedStatus === 'in_progress' ? 'bg-white shadow-soft-sm text-brand-dark' : 'text-stone-500 hover:text-stone-700'
+                className={`px-2.5 py-1 rounded-lg transition-all ${
+                  selectedStatus === 'in_progress' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
                 }`}
               >
                 In Progress
               </button>
               <button
                 onClick={() => setSelectedStatus('resolved')}
-                className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
-                  selectedStatus === 'resolved' ? 'bg-white shadow-soft-sm text-brand-dark' : 'text-stone-500 hover:text-stone-700'
+                className={`px-2.5 py-1 rounded-lg transition-all ${
+                  selectedStatus === 'resolved' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
                 }`}
               >
                 Resolved
               </button>
             </div>
 
-            {/* Sort Selector */}
-            <div className="flex items-center space-x-1.5 bg-stone-50 px-3 py-2 rounded-2xl border border-stone-200/70 text-xs">
-              <ArrowUpDown className="w-3.5 h-3.5 text-stone-400" />
+            {/* Sort Dropdown */}
+            <div className="flex items-center space-x-1 bg-stone-50 border border-stone-200/80 px-2.5 py-1.5 rounded-xl text-xs text-stone-600 font-medium">
+              <ArrowUpDown className="w-3 h-3 text-stone-400" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 aria-label="Sort issues by"
-                className="bg-transparent text-stone-700 font-medium focus:outline-none cursor-pointer pr-1"
+                className="bg-transparent focus:outline-none cursor-pointer pr-1 text-stone-800"
               >
-                <option value="urgency">🔥 Highest Urgency</option>
-                <option value="severity">⭐ Severity (1-5)</option>
-                <option value="upvotes">👍 Most Upvotes</option>
-                <option value="recent">🕒 Most Recent</option>
+                <option value="urgency">Highest Urgency</option>
+                <option value="severity">Severity (1-5)</option>
+                <option value="upvotes">Most Upvotes</option>
+                <option value="recent">Most Recent</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Category Filter Pills (Horizontal Scroll) */}
-        <div className="flex items-center space-x-2 overflow-x-auto pb-1 pt-1 no-scrollbar">
+        {/* Minimal Category Pills */}
+        <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`whitespace-nowrap px-3.5 py-1.5 rounded-2xl text-xs font-semibold border transition-all ${
+            className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all font-medium ${
               selectedCategory === 'all'
-                ? 'bg-brand-dark text-white border-brand-dark shadow-soft-sm'
-                : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
+                ? 'bg-stone-900 text-white shadow-subtle'
+                : 'text-stone-600 hover:bg-stone-100'
             }`}
           >
             All Categories
@@ -283,13 +201,13 @@ export default function CivicIssuesView({
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`whitespace-nowrap flex items-center space-x-1.5 px-3 py-1.5 rounded-2xl text-xs font-medium border transition-all ${
+                className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all flex items-center space-x-1 font-medium ${
                   isSelected
-                    ? 'bg-pastel-peach-light text-pastel-peach-dark border-pastel-peach-border font-semibold shadow-soft-sm'
-                    : 'bg-white text-stone-600 border-stone-200/80 hover:bg-stone-50'
+                    ? 'bg-stone-900 text-white shadow-subtle'
+                    : 'text-stone-600 hover:bg-stone-100'
                 }`}
               >
-                <Icon name={cat.icon} className="w-3.5 h-3.5" />
+                <Icon name={cat.icon} className="w-3 h-3 text-stone-400" />
                 <span>{cat.label}</span>
               </button>
             );
@@ -297,25 +215,14 @@ export default function CivicIssuesView({
         </div>
       </div>
 
-      {/* Issues Grid List */}
+      {/* Issue Card Grid */}
       {filteredIssues.length === 0 ? (
-        <div className="bg-surface rounded-3xl border border-stone-200/70 p-12 text-center shadow-soft-sm">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-pastel-lavender-light flex items-center justify-center text-pastel-lavender-dark mb-4">
-            <Search className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-bold text-brand-dark">No civic issues match your filter</h3>
-          <p className="text-stone-500 text-sm mt-1 max-w-md mx-auto">
-            Try clearing your search query or choosing another category tag to see active community reports.
-          </p>
-          <button
-            onClick={() => { setSelectedCategory('all'); setSelectedStatus('all'); setSearchQuery(''); }}
-            className="mt-4 px-4 py-2 rounded-xl bg-stone-100 text-stone-700 text-xs font-semibold hover:bg-stone-200 transition-all"
-          >
-            Reset Filters
-          </button>
+        <div className="bg-white rounded-2xl border border-stone-200/80 p-12 text-center shadow-subtle">
+          <p className="text-sm font-semibold text-stone-800">No issues found matching your filters</p>
+          <p className="text-xs text-stone-400 mt-1">Try clearing your search query or changing category</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredIssues.map((issue) => {
             const status = getStatusInfo(issue.status);
             const category = getCategoryInfo(issue.category);
@@ -323,105 +230,92 @@ export default function CivicIssuesView({
             return (
               <div
                 key={issue.id}
-                className="group bg-surface rounded-3xl border border-stone-200/70 p-5 shadow-soft-sm hover:shadow-soft-md transition-all flex flex-col justify-between cursor-pointer relative hover:border-pastel-peach-border/70"
                 onClick={() => onSelectIssue(issue)}
+                className="group bg-white rounded-2xl border border-stone-200/80 hover:border-stone-400/80 p-4 sm:p-5 shadow-card hover:shadow-card-hover transition-all flex flex-col justify-between cursor-pointer"
               >
-                {/* Header info & category */}
                 <div>
-                  <div className="flex items-start justify-between gap-3">
+                  {/* Top Bar: Category & Status */}
+                  <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center space-x-2">
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl text-xs font-semibold bg-pastel-peach-light text-pastel-peach-dark border border-pastel-peach-border/50">
-                        <Icon name={category.icon} className="w-3 h-3" />
+                      <span className="text-[11px] font-medium text-stone-600 bg-stone-100 px-2.5 py-0.5 rounded-md flex items-center space-x-1">
+                        <Icon name={category.icon} className="w-3 h-3 text-stone-500" />
                         <span>{category.label}</span>
                       </span>
 
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-semibold border ${status.badgeClass}`}>
-                        {status.label}
+                      <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[11px] font-medium border ${status.badgeClass}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${status.dotColor}`} />
+                        <span>{status.label}</span>
                       </span>
                     </div>
 
-                    {/* Upvote Button Direct Action */}
+                    {/* Upvote Urgency Action */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onUpvoteIssue(issue.id);
                       }}
-                      className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-2xl border text-xs font-bold transition-all ${
+                      className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all ${
                         issue.userUpvoted
-                          ? 'bg-pastel-peach text-pastel-peach-dark border-pastel-peach-border shadow-soft-sm'
-                          : 'bg-stone-50 hover:bg-pastel-peach-light text-stone-700 border-stone-200 hover:text-pastel-peach-dark'
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-subtle'
+                          : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200'
                       }`}
-                      title="Upvote as Urgent to prioritize"
+                      title="Upvote as Urgent"
                     >
-                      <Flame className={`w-3.5 h-3.5 ${issue.userUpvoted ? 'fill-current text-pastel-peach-dark' : 'text-pastel-peach-dark'}`} />
+                      <Flame className={`w-3.5 h-3.5 ${issue.userUpvoted ? 'fill-current' : 'text-amber-600'}`} />
                       <span>{issue.urgencyUpvotes || 0}</span>
                     </button>
                   </div>
 
-                  {/* Title & Image Layout */}
-                  <div className="mt-3.5 flex gap-4">
+                  {/* Title & Thumbnail */}
+                  <div className="flex gap-3.5">
                     {issue.imageUrl && (
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-stone-100 shrink-0 border border-stone-100">
+                      <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-stone-100 shrink-0 border border-stone-100">
                         <img
                           src={issue.imageUrl}
                           alt={issue.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover"
                           loading="lazy"
                         />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-base text-brand-dark line-clamp-2 group-hover:text-brand-primary transition-colors">
+                      <h3 className="font-semibold text-sm sm:text-base text-stone-900 line-clamp-2 leading-snug group-hover:text-brand-primary transition-colors">
                         {issue.title}
                       </h3>
-                      <p className="text-stone-500 text-xs mt-1.5 line-clamp-2 leading-relaxed">
+                      <p className="text-stone-500 text-xs mt-1 line-clamp-2 leading-relaxed">
                         {issue.description}
                       </p>
                     </div>
                   </div>
 
-                  {/* Location & Reporter Tag */}
-                  <div className="mt-3 flex items-center space-x-2 text-xs text-stone-500">
-                    <MapPin className="w-3.5 h-3.5 text-pastel-peach-dark shrink-0" />
-                    <span className="truncate font-medium text-stone-600">
-                      {issue.location?.name || 'Campus Location'}
-                    </span>
+                  {/* Location Landmark */}
+                  <div className="mt-3 flex items-center space-x-1.5 text-xs text-stone-500">
+                    <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                    <span className="truncate">{issue.location?.name}</span>
                   </div>
                 </div>
 
-                {/* Card Footer: Severity, Verified Count, Comments */}
-                <div className="mt-4 pt-3.5 border-t border-stone-100 flex items-center justify-between text-xs">
-                  {/* Severity Indicator */}
-                  <div className="flex items-center space-x-1.5" title={`Severity rating: ${issue.severity || 3}/5`}>
-                    <span className="text-stone-400 font-medium">Severity:</span>
-                    <div className="flex space-x-0.5">
-                      {[1, 2, 3, 4, 5].map(lvl => (
-                        <span
-                          key={lvl}
-                          className={`w-2.5 h-2.5 rounded-full ${
-                            lvl <= (issue.severity || 3)
-                              ? (issue.severity >= 4 ? 'bg-pastel-peach-dark' : 'bg-pastel-butter-dark')
-                              : 'bg-stone-200'
-                          }`}
-                        />
-                      ))}
-                    </div>
+                {/* Card Footer */}
+                <div className="mt-3.5 pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-400">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-stone-400">Severity:</span>
+                    <span className="font-semibold text-stone-700">{issue.severity || 3}/5</span>
                   </div>
 
                   <div className="flex items-center space-x-3 text-stone-400">
                     {issue.verifiedCount > 0 && (
-                      <span className="flex items-center space-x-1 text-pastel-mint-dark font-medium">
+                      <span className="flex items-center space-x-1 text-emerald-700 font-medium">
                         <Check className="w-3 h-3" />
                         <span>{issue.verifiedCount} verified</span>
                       </span>
                     )}
 
                     <span className="flex items-center space-x-1">
-                      <MessageSquare className="w-3.5 h-3.5 text-stone-400" />
+                      <MessageSquare className="w-3 h-3" />
                       <span>{issue.comments?.length || 0}</span>
                     </span>
 
-                    <span className="text-stone-400">{timeAgo(issue.reportedAt)}</span>
+                    <span>{timeAgo(issue.reportedAt)}</span>
                   </div>
                 </div>
 

@@ -5,15 +5,11 @@ import {
   Clock, 
   Sparkles, 
   HeartHandshake, 
-  MessageSquare, 
-  Tag, 
   Award, 
-  ShieldCheck, 
-  CheckCircle,
-  AlertCircle,
-  HelpCircle
+  Plus,
+  ArrowRight
 } from 'lucide-react';
-import { LOST_FOUND_CATEGORIES, LOST_FOUND_STATUSES } from '../types';
+import { LOST_FOUND_CATEGORIES } from '../types';
 import { findMatchesForPost } from '../services/matchingEngine';
 import Icon from './Icon';
 
@@ -57,7 +53,7 @@ export default function LostFoundView({
     return result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [items, selectedType, selectedCategory, searchQuery]);
 
-  // Global Smart Match Discovery (find any high confidence pairs)
+  // System Smart Matches
   const systemMatches = useMemo(() => {
     const matchesFound = [];
     const lostItems = items.filter(i => i.type === 'lost' && i.status !== 'reunited');
@@ -77,7 +73,7 @@ export default function LostFoundView({
   }, [items]);
 
   const getCategoryInfo = (catId) => {
-    return LOST_FOUND_CATEGORIES.find(c => c.id === catId) || { label: catId, color: 'sand', icon: 'Package' };
+    return LOST_FOUND_CATEGORIES.find(c => c.id === catId) || { label: catId, icon: 'Package' };
   };
 
   const timeAgo = (dateStr) => {
@@ -90,158 +86,118 @@ export default function LostFoundView({
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-16">
       
-      {/* Hero Banner with Soft Pastel Gradient */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-pastel-lavender-light/90 via-pastel-sky-light/80 to-pastel-mint-light/90 p-6 sm:p-8 border border-stone-200/60 shadow-soft-sm">
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/80 border border-stone-200/60 text-xs font-semibold text-brand-dark mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-brand-primary" />
-            <span>Multi-Factor AI Similarity Matching</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-brand-dark">
-            Campus & Community Lost & Found
+      {/* Clean Minimal Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900">
+            Lost & Found Community Hub
           </h1>
-          <p className="text-stone-600 text-sm sm:text-base mt-1.5 leading-relaxed">
-            Report lost possessions or log found items. Our smart matching engine compares categories, keywords, geolocation proximity, and photo cues to automatically suggest matches.
+          <p className="text-stone-500 text-xs sm:text-sm mt-0.5">
+            Auto-matches lost and found listings using categories, keywords, and location proximity.
           </p>
-
-          <div className="mt-4 flex flex-wrap gap-2.5">
-            <button
-              onClick={() => onOpenCreateModal('lost')}
-              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-2xl bg-brand-dark text-white text-xs sm:text-sm font-semibold hover:bg-stone-800 transition-all shadow-soft-sm"
-            >
-              <span>+ I Lost an Item</span>
-            </button>
-            <button
-              onClick={() => onOpenCreateModal('found')}
-              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-2xl bg-pastel-mint-dark text-white text-xs sm:text-sm font-semibold hover:bg-emerald-700 transition-all shadow-soft-sm"
-            >
-              <span>+ I Found an Item</span>
-            </button>
-          </div>
         </div>
 
-        {/* Abstract pastel circles */}
-        <div className="absolute -right-10 -bottom-10 w-52 h-52 rounded-full bg-pastel-lavender/30 blur-2xl pointer-events-none" />
+        <div className="flex items-center space-x-2 shrink-0">
+          <button
+            onClick={() => onOpenCreateModal('lost')}
+            className="px-3.5 py-2 rounded-xl bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 transition-all flex items-center space-x-1.5 shadow-subtle"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Post an Item</span>
+          </button>
+        </div>
       </div>
 
-      {/* SMART MATCH DISCOVERY ALERT BANNER (If any matches exist) */}
+      {/* Discreet Smart Match Suggestion Alert */}
       {systemMatches.length > 0 && (
-        <div className="p-4 rounded-3xl bg-gradient-to-r from-pastel-lavender-light to-pastel-mint-light border-2 border-pastel-lavender-border text-brand-dark shadow-soft-sm animate-fade-in space-y-3">
-          <div className="flex items-center space-x-2">
-            <div className="w-7 h-7 rounded-xl bg-white flex items-center justify-center text-brand-primary shadow-soft-sm font-bold">
-              <Sparkles className="w-4 h-4 animate-pulse-subtle" />
+        <div className="bg-indigo-50/70 border border-indigo-100 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-brand-dark">
-                Smart Match Suggestions Found ({systemMatches.length})
-              </h3>
-              <p className="text-[11px] text-stone-600">
-                Our algorithm detected potential match pairs between active lost and found posts!
-              </p>
+              <span className="font-bold text-indigo-950 block">
+                {systemMatches.length} Possible Match Pair Detected
+              </span>
+              <span className="text-indigo-700">
+                "{systemMatches[0].lostItem.title}" matches with "{systemMatches[0].foundItem.title}" ({systemMatches[0].score}% confidence)
+              </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-            {systemMatches.slice(0, 2).map((match, i) => (
-              <div 
-                key={i} 
-                className="bg-white/90 p-3 rounded-2xl border border-stone-200/80 flex items-center justify-between cursor-pointer hover:border-brand-primary/60 transition-all shadow-soft-sm"
-                onClick={() => onSelectItem(match.lostItem)}
-              >
-                <div className="truncate mr-2">
-                  <div className="flex items-center space-x-1.5">
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-pastel-peach-light text-pastel-peach-dark">LOST</span>
-                    <span className="text-xs font-semibold text-stone-800 truncate">{match.lostItem.title}</span>
-                  </div>
-                  <div className="flex items-center space-x-1.5 mt-1">
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-pastel-mint-light text-pastel-mint-dark">FOUND</span>
-                    <span className="text-xs text-stone-600 truncate">{match.foundItem.title}</span>
-                  </div>
-                </div>
-
-                <div className="shrink-0 text-right">
-                  <span className="inline-flex items-center px-2 py-1 rounded-xl text-xs font-bold bg-pastel-lavender-light text-pastel-lavender-dark border border-pastel-lavender-border">
-                    {match.score}% Match
-                  </span>
-                  <span className="block text-[9px] text-brand-primary font-medium mt-0.5">Click to view</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <button
+            onClick={() => onSelectItem(systemMatches[0].lostItem)}
+            className="px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg font-semibold hover:bg-indigo-50 transition-all flex items-center space-x-1 shrink-0 self-start sm:self-center"
+          >
+            <span>Review Match</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
         </div>
       )}
 
-      {/* Controls Bar: Type Tabs, Search, Category Pills */}
-      <div className="bg-surface p-4 rounded-3xl border border-stone-200/70 shadow-soft-sm space-y-3.5">
-        
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      {/* Search & Filter Controls */}
+      <div className="bg-white p-3.5 rounded-2xl border border-stone-200/80 shadow-subtle space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+          
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by item name, color (e.g. Navy Blue), brand, or location..."
-              className="w-full pl-9 pr-4 py-2.5 bg-stone-50 border border-stone-200/70 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all placeholder:text-stone-400"
+              placeholder="Search by item name, color, brand, or location..."
+              className="w-full pl-9 pr-4 py-2 bg-stone-50/80 hover:bg-stone-50 focus:bg-white border border-stone-200/80 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-stone-900 transition-all placeholder:text-stone-400"
             />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 hover:text-stone-600 bg-stone-200/60 rounded-full px-1.5 py-0.5"
-              >
-                Clear
-              </button>
-            )}
           </div>
 
           {/* Type Segmented Controller */}
-          <div className="flex items-center bg-stone-50 p-1 rounded-2xl border border-stone-200/70 text-xs">
+          <div className="flex items-center bg-stone-100 p-0.5 rounded-xl text-xs font-medium">
             <button
               onClick={() => setSelectedType('all')}
-              className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
-                selectedType === 'all' ? 'bg-white shadow-soft-sm text-brand-dark font-semibold' : 'text-stone-500 hover:text-stone-700'
+              className={`px-3 py-1 rounded-lg transition-all ${
+                selectedType === 'all' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
               }`}
             >
-              All Items
+              All
             </button>
             <button
               onClick={() => setSelectedType('lost')}
-              className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
-                selectedType === 'lost' ? 'bg-pastel-peach-light text-pastel-peach-dark font-semibold shadow-soft-sm' : 'text-stone-500 hover:text-stone-700'
+              className={`px-3 py-1 rounded-lg transition-all ${
+                selectedType === 'lost' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
               }`}
             >
-              Lost (Looking)
+              Lost
             </button>
             <button
               onClick={() => setSelectedType('found')}
-              className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
-                selectedType === 'found' ? 'bg-pastel-sky-light text-pastel-sky-dark font-semibold shadow-soft-sm' : 'text-stone-500 hover:text-stone-700'
+              className={`px-3 py-1 rounded-lg transition-all ${
+                selectedType === 'found' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
               }`}
             >
-              Found (Safe)
+              Found
             </button>
             <button
               onClick={() => setSelectedType('reunited')}
-              className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
-                selectedType === 'reunited' ? 'bg-pastel-mint-light text-pastel-mint-dark font-semibold shadow-soft-sm' : 'text-stone-500 hover:text-stone-700'
+              className={`px-3 py-1 rounded-lg transition-all ${
+                selectedType === 'reunited' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
               }`}
             >
-              Reunited 🎉
+              Reunited
             </button>
           </div>
         </div>
 
-        {/* Category Pills */}
-        <div className="flex items-center space-x-2 overflow-x-auto pb-1 pt-1 no-scrollbar">
+        {/* Minimal Category Pills */}
+        <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`whitespace-nowrap px-3.5 py-1.5 rounded-2xl text-xs font-semibold border transition-all ${
+            className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all font-medium ${
               selectedCategory === 'all'
-                ? 'bg-brand-dark text-white border-brand-dark shadow-soft-sm'
-                : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
+                ? 'bg-stone-900 text-white shadow-subtle'
+                : 'text-stone-600 hover:bg-stone-100'
             }`}
           >
             All Categories
@@ -253,40 +209,33 @@ export default function LostFoundView({
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`whitespace-nowrap flex items-center space-x-1.5 px-3 py-1.5 rounded-2xl text-xs font-medium border transition-all ${
+                className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all flex items-center space-x-1 font-medium ${
                   isSelected
-                    ? 'bg-pastel-lavender-light text-pastel-lavender-dark border-pastel-lavender-border font-semibold shadow-soft-sm'
-                    : 'bg-white text-stone-600 border-stone-200/80 hover:bg-stone-50'
+                    ? 'bg-stone-900 text-white shadow-subtle'
+                    : 'text-stone-600 hover:bg-stone-100'
                 }`}
               >
-                <Icon name={cat.icon} className="w-3.5 h-3.5" />
+                <Icon name={cat.icon} className="w-3 h-3 text-stone-400" />
                 <span>{cat.label}</span>
               </button>
             );
           })}
         </div>
-
       </div>
 
       {/* Grid of Items */}
       {filteredItems.length === 0 ? (
-        <div className="bg-surface rounded-3xl border border-stone-200/70 p-12 text-center shadow-soft-sm">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-pastel-lavender-light flex items-center justify-center text-pastel-lavender-dark mb-4">
-            <HeartHandshake className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-bold text-brand-dark">No lost & found listings match</h3>
-          <p className="text-stone-500 text-sm mt-1 max-w-md mx-auto">
-            Try adjusting your search keywords or switching between Lost and Found tabs.
-          </p>
+        <div className="bg-white rounded-2xl border border-stone-200/80 p-12 text-center shadow-subtle">
+          <p className="text-sm font-semibold text-stone-800">No items found</p>
+          <p className="text-xs text-stone-400 mt-1">Try switching tabs or adjusting search keywords</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredItems.map((item) => {
             const category = getCategoryInfo(item.category);
             const isLost = item.type === 'lost';
             const isReunited = item.status === 'reunited';
 
-            // Check if this item has matches in the opposite bucket
             const candidateMatches = findMatchesForPost(item, items, 60);
             const topMatch = candidateMatches[0];
 
@@ -294,92 +243,79 @@ export default function LostFoundView({
               <div
                 key={item.id}
                 onClick={() => onSelectItem(item)}
-                className="group bg-surface rounded-3xl border border-stone-200/70 p-4 shadow-soft-sm hover:shadow-soft-md transition-all flex flex-col justify-between cursor-pointer relative hover:border-pastel-lavender-border/80"
+                className="group bg-white rounded-2xl border border-stone-200/80 hover:border-stone-400/80 p-3.5 shadow-card hover:shadow-card-hover transition-all flex flex-col justify-between cursor-pointer"
               >
                 <div>
                   {/* Photo Container */}
-                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-stone-100 mb-3 border border-stone-100">
+                  <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-stone-100 mb-3 border border-stone-100">
                     {item.imageUrl ? (
                       <img
                         src={item.imageUrl}
                         alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-stone-400">
-                        <Icon name={category.icon} className="w-10 h-10 opacity-40" />
+                      <div className="w-full h-full flex items-center justify-center text-stone-300">
+                        <Icon name={category.icon} className="w-8 h-8" />
                       </div>
                     )}
 
-                    {/* Top Status & Type Badges */}
-                    <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                    {/* Minimal Type Badge */}
+                    <div className="absolute top-2 left-2">
                       {isReunited ? (
-                        <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-pastel-mint text-pastel-mint-dark border border-pastel-mint-border shadow-soft-sm">
-                          Reunited 🎉
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-600 text-white shadow-subtle">
+                          REUNITED
                         </span>
                       ) : isLost ? (
-                        <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-pastel-peach text-pastel-peach-dark border border-pastel-peach-border shadow-soft-sm">
-                          LOST ITEM
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-600 text-white shadow-subtle">
+                          LOST
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-pastel-sky text-pastel-sky-dark border border-pastel-sky-border shadow-soft-sm">
-                          FOUND ITEM
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-600 text-white shadow-subtle">
+                          FOUND
                         </span>
                       )}
                     </div>
 
                     {/* Reward Badge */}
                     {item.reward && (
-                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-pastel-butter text-pastel-butter-dark border border-pastel-butter-border shadow-soft-sm flex items-center space-x-1">
-                        <Award className="w-3 h-3" />
-                        <span>{item.reward}</span>
+                      <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-white/95 text-stone-800 shadow-subtle">
+                        {item.reward}
                       </div>
                     )}
 
-                    {/* Smart Match Suggested Pill */}
+                    {/* Match notification tag */}
                     {topMatch && !isReunited && (
-                      <div className="absolute bottom-2 inset-x-2 bg-brand-dark/85 backdrop-blur-md text-white px-2 py-1 rounded-xl text-[10px] font-bold text-center flex items-center justify-center space-x-1 shadow-soft-sm">
-                        <Sparkles className="w-3 h-3 text-pastel-lavender" />
-                        <span>✨ {topMatch.score}% Match Found</span>
+                      <div className="absolute bottom-2 inset-x-2 bg-stone-900/90 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[10px] font-semibold text-center flex items-center justify-center space-x-1">
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span>{topMatch.score}% Match Found</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Category Pill */}
-                  <div className="flex items-center space-x-1 text-[11px] text-stone-500 font-medium mb-1">
-                    <Icon name={category.icon} className="w-3 h-3 text-stone-400" />
-                    <span>{category.label}</span>
-                    {item.color && (
-                      <>
-                        <span>•</span>
-                        <span className="text-stone-600 font-semibold">{item.color}</span>
-                      </>
-                    )}
+                  {/* Category & Title */}
+                  <div className="text-[11px] text-stone-400 font-medium mb-1">
+                    {category.label} {item.color ? `• ${item.color}` : ''}
                   </div>
 
-                  {/* Title */}
-                  <h3 className="font-bold text-sm text-brand-dark line-clamp-2 group-hover:text-brand-primary transition-colors leading-snug">
+                  <h3 className="font-semibold text-xs sm:text-sm text-stone-900 line-clamp-2 leading-snug group-hover:text-brand-primary transition-colors">
                     {item.title}
                   </h3>
 
-                  {/* Description snippet */}
                   <p className="text-stone-500 text-xs mt-1 line-clamp-2 leading-relaxed">
                     {item.description}
                   </p>
                 </div>
 
-                {/* Card Bottom Meta */}
+                {/* Footer Meta */}
                 <div className="mt-3 pt-2.5 border-t border-stone-100 flex items-center justify-between text-xs text-stone-400">
                   <div className="flex items-center space-x-1 truncate mr-2">
                     <MapPin className="w-3 h-3 text-stone-400 shrink-0" />
-                    <span className="truncate text-stone-600">{item.locationName}</span>
+                    <span className="truncate">{item.locationName}</span>
                   </div>
 
-                  <div className="shrink-0 flex items-center space-x-1 text-[11px]">
-                    <Clock className="w-3 h-3" />
-                    <span>{timeAgo(item.timestamp)}</span>
-                  </div>
+                  <span className="text-[11px] shrink-0">{timeAgo(item.timestamp)}</span>
                 </div>
 
               </div>

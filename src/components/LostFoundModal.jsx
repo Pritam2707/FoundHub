@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  X, 
-  MapPin, 
-  Camera, 
-  Sparkles, 
-  HelpCircle, 
-  Lock, 
-  Award, 
-  Calendar,
-  HeartHandshake
-} from 'lucide-react';
+import { X, Lock, Award, HeartHandshake } from 'lucide-react';
 import { LOST_FOUND_CATEGORIES, CAMPUS_LANDMARKS } from '../types';
 import Icon from './Icon';
 import EdgeStoreUploader from './EdgeStoreUploader';
@@ -17,9 +7,7 @@ import EdgeStoreUploader from './EdgeStoreUploader';
 const SAMPLE_LF_PHOTOS = [
   { label: 'Laptop', url: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80' },
   { label: 'Water Bottle', url: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=800&q=80' },
-  { label: 'Keys / ID Card', url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80' },
-  { label: 'Backpack', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80' },
-  { label: 'Headphones', url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80' },
+  { label: 'ID Card / Keys', url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80' },
 ];
 
 export default function LostFoundModal({ 
@@ -28,7 +16,7 @@ export default function LostFoundModal({
   onSubmit, 
   initialType = 'lost' 
 }) {
-  const [type, setType] = useState(initialType); // 'lost' or 'found'
+  const [type, setType] = useState(initialType);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('bottles_mugs');
   const [color, setColor] = useState('');
@@ -38,7 +26,6 @@ export default function LostFoundModal({
   const [lat, setLat] = useState(CAMPUS_LANDMARKS[0].lat);
   const [lng, setLng] = useState(CAMPUS_LANDMARKS[0].lng);
   const [imageUrl, setImageUrl] = useState(SAMPLE_LF_PHOTOS[1].url);
-  const [customPhotoInput, setCustomPhotoInput] = useState('');
   const [secretQuestion, setSecretQuestion] = useState('');
   const [reward, setReward] = useState('');
   const [contactInfo, setContactInfo] = useState('');
@@ -65,16 +52,16 @@ export default function LostFoundModal({
       category,
       color: color.trim() || undefined,
       brand: brand.trim() || undefined,
-      description: description.trim() || 'No extra description provided.',
+      description: description.trim() || 'No details provided.',
       status: 'open',
       locationName: locationName.trim(),
       location: {
         lat: Number(lat),
         lng: Number(lng),
       },
-      imageUrl: customPhotoInput.trim() || imageUrl,
-      posterName: 'You (Campus Community)',
-      posterContact: contactInfo.trim() || 'user@campus.edu',
+      imageUrl,
+      posterName: 'You',
+      posterContact: contactInfo.trim() || 'student@campus.edu',
       secretQuestion: type === 'found' ? secretQuestion.trim() : undefined,
       reward: type === 'lost' && reward.trim() ? reward.trim() : undefined,
       timestamp: new Date().toISOString(),
@@ -86,86 +73,69 @@ export default function LostFoundModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
-      <div className="bg-surface w-full max-w-2xl rounded-3xl border border-stone-200/80 shadow-soft-lg overflow-hidden animate-slide-up">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+      <div className="bg-white w-full max-w-xl rounded-3xl border border-stone-200 shadow-modal overflow-hidden animate-fade-in max-h-[85vh] flex flex-col">
         
-        {/* Modal Header */}
-        <div className="px-6 py-4.5 border-b border-stone-100 flex items-center justify-between bg-stone-50/60">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-pastel-lavender-light text-pastel-lavender-dark flex items-center justify-center">
-              <HeartHandshake className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-brand-dark">
-                {type === 'lost' ? 'Report a Lost Possession' : 'Post a Found Item'}
-              </h2>
-              <p className="text-xs text-stone-500">Cross-matched automatically with other community reports</p>
-            </div>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-stone-900">
+              {type === 'lost' ? 'Post a Lost Possession' : 'Log a Found Item'}
+            </h2>
+            <p className="text-xs text-stone-400">Auto-matched with community listings</p>
           </div>
-
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition-all"
+            className="w-8 h-8 rounded-full text-stone-400 hover:text-stone-800 hover:bg-stone-100 flex items-center justify-center transition-all"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
           
-          {/* Lost vs Found Segmented Toggle */}
-          <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-              Are you reporting a lost or found item?
-            </label>
-            <div className="grid grid-cols-2 gap-2 p-1 bg-stone-100/80 rounded-2xl border border-stone-200/60">
-              <button
-                type="button"
-                onClick={() => setType('lost')}
-                className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
-                  type === 'lost'
-                    ? 'bg-pastel-peach text-pastel-peach-dark shadow-soft-sm'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                🔍 I Lost Something
-              </button>
-              <button
-                type="button"
-                onClick={() => setType('found')}
-                className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
-                  type === 'found'
-                    ? 'bg-pastel-sky text-pastel-sky-dark shadow-soft-sm'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                📦 I Found Something
-              </button>
-            </div>
+          {/* Type Toggle */}
+          <div className="flex bg-stone-100 p-0.5 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setType('lost')}
+              className={`flex-1 py-1.5 rounded-lg font-semibold transition-all ${
+                type === 'lost' ? 'bg-white text-stone-900 shadow-subtle' : 'text-stone-500'
+              }`}
+            >
+              I Lost Something
+            </button>
+            <button
+              type="button"
+              onClick={() => setType('found')}
+              className={`flex-1 py-1.5 rounded-lg font-semibold transition-all ${
+                type === 'found' ? 'bg-white text-stone-900 shadow-subtle' : 'text-stone-500'
+              }`}
+            >
+              I Found Something
+            </button>
           </div>
 
-          {/* Category Picker */}
+          {/* Category */}
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-              Item Category
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {LOST_FOUND_CATEGORIES.map((cat) => {
+            <label className="block font-semibold text-stone-700 mb-1">Category</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {LOST_FOUND_CATEGORIES.map(cat => {
                 const isSelected = category === cat.id;
                 return (
                   <button
                     key={cat.id}
                     type="button"
                     onClick={() => setCategory(cat.id)}
-                    className={`flex items-center space-x-2 p-2.5 rounded-2xl border text-left transition-all ${
+                    className={`p-2 rounded-xl border text-left flex items-center space-x-1.5 transition-all ${
                       isSelected
-                        ? 'bg-pastel-lavender-light border-pastel-lavender-border text-pastel-lavender-dark font-semibold shadow-soft-sm'
-                        : 'bg-white border-stone-200/80 text-stone-600 hover:bg-stone-50'
+                        ? 'bg-stone-900 border-stone-900 text-white font-semibold'
+                        : 'bg-stone-50 border-stone-200/80 text-stone-600 hover:bg-stone-100'
                     }`}
                   >
-                    <Icon name={cat.icon} className={`w-4 h-4 ${isSelected ? 'text-pastel-lavender-dark' : 'text-stone-400'}`} />
-                    <span className="text-xs truncate">{cat.label}</span>
+                    <Icon name={cat.icon} className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{cat.label}</span>
                   </button>
                 );
               })}
@@ -174,204 +144,144 @@ export default function LostFoundModal({
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
-              Item Title / Summary *
-            </label>
+            <label className="block font-semibold text-stone-700 mb-1">Item Title *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Navy Blue HydroFlask 32oz with space stickers"
-              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+              placeholder="e.g. Navy Blue HydroFlask with space stickers"
+              className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-stone-900"
             />
           </div>
 
-          {/* Attributes: Color & Brand */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Color & Brand */}
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
-                Color / Finish
-              </label>
+              <label className="block font-semibold text-stone-700 mb-1">Color</label>
               <input
                 type="text"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                placeholder="e.g. Navy Blue, Matte Black, Rose Gold"
-                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                placeholder="e.g. Navy Blue"
+                className="w-full px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
-                Brand / Model (Optional)
-              </label>
+              <label className="block font-semibold text-stone-700 mb-1">Brand</label>
               <input
                 type="text"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
-                placeholder="e.g. Apple, HydroFlask, Sony, Nike"
-                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                placeholder="e.g. Apple / Nike"
+                className="w-full px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl"
               />
             </div>
           </div>
 
           {/* Location */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
-              {type === 'lost' ? 'Last Seen Location' : 'Where was it Found / Safekept?'}
+          <div>
+            <label className="block font-semibold text-stone-700 mb-1">
+              {type === 'lost' ? 'Last Seen Location' : 'Found / Safekeeping Location'}
             </label>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="block text-[11px] text-stone-500 mb-1">Campus Landmark</label>
-                <select
-                  value={locationName}
-                  onChange={(e) => handleLandmarkSelect(e.target.value)}
-                  className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-700 font-medium focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-                >
-                  {CAMPUS_LANDMARKS.map(lm => (
-                    <option key={lm.name} value={lm.name}>
-                      {lm.name} ({lm.area})
-                    </option>
-                  ))}
-                  <option value="Other Area">Other / Specific Area</option>
-                </select>
-              </div>
+              <select
+                value={locationName}
+                onChange={(e) => handleLandmarkSelect(e.target.value)}
+                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none"
+              >
+                {CAMPUS_LANDMARKS.map(lm => (
+                  <option key={lm.name} value={lm.name}>
+                    {lm.name}
+                  </option>
+                ))}
+              </select>
 
-              <div>
-                <label className="block text-[11px] text-stone-500 mb-1">Spot Details</label>
-                <input
-                  type="text"
-                  value={locationName}
-                  onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="e.g. 2nd floor desk #14, Quiet Study area"
-                  className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-                />
-              </div>
+              <input
+                type="text"
+                value={locationName}
+                onChange={(e) => setLocationName(e.target.value)}
+                placeholder="Specific spot notes..."
+                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none"
+              />
             </div>
           </div>
 
-          {/* Description & Distinctive Features */}
+          {/* Description */}
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
-              Distinctive Features & Description
-            </label>
+            <label className="block font-semibold text-stone-700 mb-1">Distinctive Markings</label>
             <textarea
-              rows={3}
+              rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe dents, scratches, stickers, contents inside, or specific markings..."
-              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+              placeholder="Describe scratches, stickers, contents..."
+              className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-stone-900"
             />
           </div>
 
-          {/* Secret Question for Found Items (Verification Security) */}
+          {/* Secret question for found */}
           {type === 'found' && (
-            <div className="p-3.5 rounded-2xl bg-pastel-lavender-light/70 border border-pastel-lavender-border space-y-1.5">
-              <label className="block text-xs font-bold text-pastel-lavender-dark uppercase tracking-wider flex items-center space-x-1.5">
-                <Lock className="w-3.5 h-3.5" />
-                <span>Secret Ownership Verification Question (Recommended)</span>
-              </label>
-              <p className="text-[11px] text-stone-600">
-                Ask a specific question only the true owner can answer before claiming (e.g. "What is on the wallpaper?", "What keychain is attached?").
-              </p>
+            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 space-y-1">
+              <label className="font-semibold text-stone-800 block">Secret Ownership Question</label>
               <input
                 type="text"
                 value={secretQuestion}
                 onChange={(e) => setSecretQuestion(e.target.value)}
-                placeholder="e.g. What specific sticker is placed on the backside?"
-                className="w-full px-3 py-2 bg-white border border-pastel-lavender-border rounded-xl text-xs focus:outline-none"
+                placeholder="e.g. What specific sticker is on the back?"
+                className="w-full px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs"
               />
             </div>
           )}
 
-          {/* Reward for Lost Items */}
-          {type === 'lost' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Contact / Reward */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block font-semibold text-stone-700 mb-1">Your Email</label>
+              <input
+                type="text"
+                value={contactInfo}
+                onChange={(e) => setContactInfo(e.target.value)}
+                placeholder="contact@campus.edu"
+                className="w-full px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl"
+              />
+            </div>
+            {type === 'lost' && (
               <div>
-                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
-                  Optional Reward
-                </label>
+                <label className="block font-semibold text-stone-700 mb-1">Reward (Optional)</label>
                 <input
                   type="text"
                   value={reward}
                   onChange={(e) => setReward(e.target.value)}
-                  placeholder="e.g. Free Coffee ☕ / $25 / Big Thanks"
-                  className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                  placeholder="e.g. $20 / Coffee"
+                  className="w-full px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl"
                 />
               </div>
+            )}
+          </div>
 
-              <div>
-                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
-                  Your Contact Email / Handle
-                </label>
-                <input
-                  type="text"
-                  value={contactInfo}
-                  onChange={(e) => setContactInfo(e.target.value)}
-                  placeholder="e.g. yourname@campus.edu"
-                  className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Photo Attachment via EdgeStore */}
+          {/* Photo */}
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-              Item Photo (EdgeStore Cloud Bucket)
-            </label>
-            
+            <label className="block font-semibold text-stone-700 mb-1.5">Photo</label>
             <EdgeStoreUploader
               initialUrl={imageUrl}
-              onUploadComplete={(url) => {
-                if (url) {
-                  setImageUrl(url);
-                  setCustomPhotoInput('');
-                }
-              }}
+              onUploadComplete={(url) => setImageUrl(url)}
             />
-
-            {/* Quick sample photo pickers */}
-            <div className="mt-2.5">
-              <span className="text-[11px] text-stone-400 block mb-1.5">Or choose sample test photo:</span>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                {SAMPLE_LF_PHOTOS.map((sp, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => { setImageUrl(sp.url); setCustomPhotoInput(''); }}
-                    className={`relative shrink-0 w-16 h-14 rounded-xl overflow-hidden border-2 transition-all ${
-                      imageUrl === sp.url && !customPhotoInput
-                        ? 'border-brand-primary shadow-soft-sm'
-                        : 'border-stone-200 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={sp.url} alt={sp.label} className="w-full h-full object-cover" />
-                    <span className="absolute bottom-0 inset-x-0 bg-stone-900/60 text-white text-[9px] text-center truncate py-0.5">
-                      {sp.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Submit */}
-          <div className="pt-3 border-t border-stone-100 flex items-center justify-end space-x-2.5">
+          <div className="pt-3 border-t border-stone-100 flex justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-2xl border border-stone-200 text-stone-600 text-xs font-semibold hover:bg-stone-50 transition-all"
+              className="px-3.5 py-2 rounded-xl text-stone-600 hover:bg-stone-100 font-semibold"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-2xl bg-brand-primary text-white text-xs font-bold hover:bg-brand-primaryHover shadow-soft-md transition-all active:scale-95 flex items-center space-x-1.5"
+              className="px-4 py-2 bg-stone-900 text-white rounded-xl font-semibold hover:bg-stone-800 shadow-subtle"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>{type === 'lost' ? 'Post Lost Report' : 'Post Found Item'}</span>
+              {type === 'lost' ? 'Post Lost Item' : 'Post Found Item'}
             </button>
           </div>
 

@@ -1,71 +1,52 @@
 export const CIVIC_CATEGORIES = [
-  { id: 'pothole', label: 'Pothole & Road Hazard', icon: 'AlertTriangle', color: 'peach', description: 'Cracks, deep potholes, or uneven pathways' },
-  { id: 'streetlight', label: 'Streetlight / Lighting', icon: 'Lightbulb', color: 'butter', description: 'Non-functional lamps or hazardous dark spots' },
-  { id: 'water_leak', label: 'Water Leakage & Drainage', icon: 'Droplets', color: 'sky', description: 'Burst pipes, clogged storm drains, or standing water' },
-  { id: 'garbage', label: 'Waste & Sanitation', icon: 'Trash2', color: 'rose', description: 'Overflowing bins, uncollected waste, litter' },
-  { id: 'broken_infra', label: 'Broken Infrastructure', icon: 'Wrench', color: 'lavender', description: 'Damaged benches, railings, broken door handles' },
-  { id: 'wifi_deadzone', label: 'WiFi & Network Deadzone', icon: 'WifiOff', color: 'sand', description: 'No campus signal, dropped connections, router faults' },
-  { id: 'electrical', label: 'Electrical & Safety', icon: 'Zap', color: 'butter', description: 'Exposed wiring, spark risks, malfunctioning sockets' },
-  { id: 'hvac', label: 'HVAC & Climate', icon: 'Wind', color: 'mint', description: 'Broken AC units, heating issues, air circulation' },
+  { id: 'pothole', label: 'Pothole & Road Hazard', icon: 'AlertTriangle', tagColor: 'text-stone-700 bg-stone-100' },
+  { id: 'streetlight', label: 'Lighting & Streetlight', icon: 'Lightbulb', tagColor: 'text-amber-800 bg-pastel-butter-bg border-pastel-butter-border' },
+  { id: 'water_leak', label: 'Water Leak & Drainage', icon: 'Droplets', tagColor: 'text-sky-800 bg-pastel-sky-bg border-pastel-sky-border' },
+  { id: 'garbage', label: 'Waste & Sanitation', icon: 'Trash2', tagColor: 'text-rose-800 bg-pastel-rose-bg border-pastel-rose-border' },
+  { id: 'broken_infra', label: 'Broken Infrastructure', icon: 'Wrench', tagColor: 'text-purple-800 bg-pastel-lavender-bg border-pastel-lavender-border' },
+  { id: 'wifi_deadzone', label: 'WiFi & Connectivity', icon: 'WifiOff', tagColor: 'text-stone-700 bg-stone-100' },
+  { id: 'electrical', label: 'Electrical & Safety', icon: 'Zap', tagColor: 'text-amber-800 bg-pastel-butter-bg border-pastel-butter-border' },
+  { id: 'hvac', label: 'HVAC & Climate', icon: 'Wind', tagColor: 'text-emerald-800 bg-pastel-sage-bg border-pastel-sage-border' },
 ];
 
 export const CIVIC_STATUSES = [
   {
     id: 'reported',
     label: 'Reported',
-    badgeClass: 'bg-pastel-peach-light text-pastel-peach-dark border-pastel-peach-border',
-    color: '#FED7AA',
-    description: 'Submitted by community, awaiting staff review'
+    dotColor: 'bg-purple-500',
+    badgeClass: 'bg-purple-50 text-purple-700 border-purple-200/60',
+    description: 'Awaiting review'
   },
   {
     id: 'acknowledged',
     label: 'Acknowledged',
-    badgeClass: 'bg-pastel-lavender-light text-pastel-lavender-dark border-pastel-lavender-border',
-    color: '#DDD6FE',
-    description: 'Verified by facility team, scheduled for crew'
+    dotColor: 'bg-blue-500',
+    badgeClass: 'bg-blue-50 text-blue-700 border-blue-200/60',
+    description: 'Assigned to team'
   },
   {
     id: 'in_progress',
     label: 'In Progress',
-    badgeClass: 'bg-pastel-sky-light text-pastel-sky-dark border-pastel-sky-border',
-    color: '#BAE6FD',
-    description: 'Maintenance team on site fixing the issue'
+    dotColor: 'bg-amber-500',
+    badgeClass: 'bg-amber-50 text-amber-700 border-amber-200/60',
+    description: 'Work underway'
   },
   {
     id: 'resolved',
     label: 'Resolved',
-    badgeClass: 'bg-pastel-mint-light text-pastel-mint-dark border-pastel-mint-border',
-    color: '#A7F3D0',
-    description: 'Repaired and verified with photo proof'
+    dotColor: 'bg-emerald-500',
+    badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+    description: 'Fixed & verified'
   },
 ];
 
 export const LOST_FOUND_CATEGORIES = [
-  { id: 'electronics', label: 'Electronics & Gadgets', icon: 'Laptop', color: 'lavender' },
-  { id: 'keys_cards', label: 'Keys, IDs & Wallets', icon: 'CreditCard', color: 'peach' },
-  { id: 'bottles_mugs', label: 'Bottles & Tumblers', icon: 'Coffee', color: 'sky' },
-  { id: 'clothing', label: 'Clothing & Accessories', icon: 'Shirt', color: 'butter' },
-  { id: 'bags', label: 'Backpacks & Bags', icon: 'Briefcase', color: 'mint' },
-  { id: 'stationery', label: 'Books, Specs & Notes', icon: 'BookOpen', color: 'sand' },
-  { id: 'other', label: 'Other Items', icon: 'Package', color: 'rose' },
-];
-
-export const LOST_FOUND_STATUSES = [
-  {
-    id: 'open',
-    label: 'Active Search',
-    badgeClass: 'bg-pastel-peach-light text-pastel-peach-dark border-pastel-peach-border',
-  },
-  {
-    id: 'in_claim',
-    label: 'Claim in Progress',
-    badgeClass: 'bg-pastel-lavender-light text-pastel-lavender-dark border-pastel-lavender-border',
-  },
-  {
-    id: 'reunited',
-    label: 'Reunited 🎉',
-    badgeClass: 'bg-pastel-mint-light text-pastel-mint-dark border-pastel-mint-border',
-  },
+  { id: 'electronics', label: 'Electronics', icon: 'Laptop' },
+  { id: 'keys_cards', label: 'Keys, IDs & Cards', icon: 'CreditCard' },
+  { id: 'bottles_mugs', label: 'Bottles & Tumblers', icon: 'Coffee' },
+  { id: 'clothing', label: 'Clothing & Bags', icon: 'Shirt' },
+  { id: 'stationery', label: 'Books & Accessories', icon: 'BookOpen' },
+  { id: 'other', label: 'Other Items', icon: 'Package' },
 ];
 
 export const CAMPUS_LANDMARKS = [
@@ -78,6 +59,3 @@ export const CAMPUS_LANDMARKS = [
   { name: 'Central Plaza & Fountain', lat: 28.5450, lng: 77.1925, area: 'Center' },
   { name: 'Innovation Hub & Labs', lat: 28.5460, lng: 77.1950, area: 'East Wing' },
 ];
-
-export const DEFAULT_MAP_CENTER = [28.5450, 77.1925];
-export const DEFAULT_MAP_ZOOM = 16;

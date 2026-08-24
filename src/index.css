@@ -4,58 +4,45 @@
 
 @layer base {
   body {
-    background-color: #F8F9FA;
-    color: #1E2337;
+    background-color: #FAFAF9;
+    color: #18181B;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.01em;
   }
 }
 
-/* Custom Soft Pastel Glassmorphism & Utilities */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-}
-
-.glass-pill {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-}
-
-/* Custom Soft Scrollbar */
+/* Minimal Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f3f5;
-  border-radius: 9999px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: #E4E4E7;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #A1A1AA;
 }
 
-/* Leaflet Map overrides for soft aesthetic */
+/* Minimal Leaflet Map Styling */
 .leaflet-container {
   font-family: inherit;
-  border-radius: 1.5rem;
+  border-radius: 1rem;
   z-index: 10;
 }
 
 .leaflet-popup-content-wrapper {
-  border-radius: 1.25rem !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08) !important;
   padding: 0 !important;
   overflow: hidden;
+  border: 1px solid #E4E4E7 !important;
 }
 
 .leaflet-popup-content {
@@ -63,14 +50,12 @@
   line-height: inherit !important;
 }
 
-/* Pastel Badge Animations */
-.pulse-badge {
-  box-shadow: 0 0 0 0 rgba(167, 243, 208, 0.7);
-  animation: pulse-ring 2s infinite cubic-bezier(0.66, 0, 0, 1);
+/* Subtle animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes pulse-ring {
-  to {
-    box-shadow: 0 0 0 10px rgba(167, 243, 208, 0);
-  }
+.animate-fade-in {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

@@ -4,61 +4,49 @@ import L from 'leaflet';
 import { 
   MapPin, 
   Flame, 
-  Sparkles, 
-  Layers, 
-  Filter, 
   Navigation, 
-  AlertTriangle, 
-  HeartHandshake,
-  CheckCircle2
+  ArrowRight
 } from 'lucide-react';
-import { CAMPUS_LANDMARKS, CIVIC_CATEGORIES, LOST_FOUND_CATEGORIES } from '../types';
+import { CAMPUS_LANDMARKS } from '../types';
 
-// Custom Marker Creators for Leaflet
-function createCustomCivicIcon(category, urgency, isResolved) {
+// Custom Minimal Map Markers
+function createMinimalCivicIcon(category, isResolved, urgency) {
   const isUrgent = urgency >= 30;
-  const bg = isResolved ? '#A7F3D0' : isUrgent ? '#FED7AA' : '#FEF08A';
-  const border = isResolved ? '#059669' : isUrgent ? '#EA580C' : '#CA8A04';
   const emoji = category === 'pothole' ? '🕳️' : category === 'streetlight' ? '💡' : category === 'water_leak' ? '💧' : '⚠️';
 
   return L.divIcon({
     className: 'custom-map-pin',
     html: `
-      <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-        ${isUrgent && !isResolved ? `<div style="position: absolute; inset: -4px; border-radius: 9999px; background: rgba(234, 88, 12, 0.3); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>` : ''}
-        <div style="width: 32px; height: 32px; border-radius: 12px; background: ${bg}; border: 2px solid ${border}; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 15px; cursor: pointer; transition: transform 0.2s;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">
+        <div style="width: 28px; height: 28px; border-radius: 8px; background: ${isResolved ? '#ECFDF5' : isUrgent ? '#FFFBEB' : '#FFFFFF'}; border: 1.5px solid ${isResolved ? '#10B981' : isUrgent ? '#F59E0B' : '#E4E4E7'}; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); font-size: 14px; cursor: pointer;">
           ${emoji}
         </div>
       </div>
     `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-    popupAnchor: [0, -18],
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
   });
 }
 
-function createCustomLostFoundIcon(type, isReunited) {
-  const isLost = type === 'lost';
-  const bg = isReunited ? '#A7F3D0' : isLost ? '#FED7AA' : '#BAE6FD';
-  const border = isReunited ? '#059669' : isLost ? '#EA580C' : '#0284C7';
-  const emoji = isReunited ? '🎉' : isLost ? '🔍' : '📦';
+function createMinimalLostFoundIcon(type, isReunited) {
+  const emoji = isReunited ? '✅' : type === 'lost' ? '🔍' : '📦';
 
   return L.divIcon({
     className: 'custom-map-pin',
     html: `
-      <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-        <div style="width: 32px; height: 32px; border-radius: 12px; background: ${bg}; border: 2px solid ${border}; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 15px; cursor: pointer;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">
+        <div style="width: 28px; height: 28px; border-radius: 8px; background: ${isReunited ? '#ECFDF5' : '#FFFFFF'}; border: 1.5px solid ${isReunited ? '#10B981' : '#E4E4E7'}; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); font-size: 14px; cursor: pointer;">
           ${emoji}
         </div>
       </div>
     `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-    popupAnchor: [0, -18],
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
   });
 }
 
-// Controller component to smoothly fly to coordinates
 function MapFlyTo({ targetCoords }) {
   const map = useMap();
   React.useEffect(() => {
@@ -83,94 +71,82 @@ export default function InteractiveMap({
   const initialCenter = [28.5450, 77.1925];
 
   return (
-    <div className="space-y-4 pb-12">
+    <div className="space-y-4 pb-16">
       
-      {/* Top Map Header & Controls */}
-      <div className="bg-surface p-4 sm:p-5 rounded-3xl border border-stone-200/70 shadow-soft-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Header & Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         <div>
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-xl bg-pastel-mint-light text-pastel-mint-dark flex items-center justify-center">
-              <MapPin className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-brand-dark">Live Geotagged Campus Map</h2>
-              <p className="text-xs text-stone-500">Visualizing potholes, hazards, and lost & found spots in real time</p>
-            </div>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900">
+            Geotagged Campus Map
+          </h1>
+          <p className="text-stone-500 text-xs sm:text-sm mt-0.5">
+            Interactive map of active hazards, road issues, and lost possessions.
+          </p>
         </div>
 
         {/* Filter Toggles */}
-        <div className="flex items-center gap-2 flex-wrap text-xs">
+        <div className="flex items-center gap-1.5 flex-wrap text-xs">
           <button
             onClick={() => setShowCivic(!showCivic)}
-            className={`px-3 py-1.5 rounded-xl font-semibold border transition-all flex items-center space-x-1.5 ${
-              showCivic 
-                ? 'bg-pastel-peach-light text-pastel-peach-dark border-pastel-peach-border shadow-soft-sm' 
-                : 'bg-stone-50 text-stone-400 border-stone-200'
+            className={`px-2.5 py-1.5 rounded-lg font-medium border transition-all ${
+              showCivic ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-500 border-stone-200'
             }`}
           >
-            <span>⚠️ Civic Issues ({civicIssues.length})</span>
+            Civic ({civicIssues.length})
           </button>
-
           <button
             onClick={() => setShowLost(!showLost)}
-            className={`px-3 py-1.5 rounded-xl font-semibold border transition-all flex items-center space-x-1.5 ${
-              showLost 
-                ? 'bg-pastel-peach-light text-pastel-peach-dark border-pastel-peach-border shadow-soft-sm' 
-                : 'bg-stone-50 text-stone-400 border-stone-200'
+            className={`px-2.5 py-1.5 rounded-lg font-medium border transition-all ${
+              showLost ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-500 border-stone-200'
             }`}
           >
-            <span>🔍 Lost Items ({lostFoundItems.filter(i => i.type === 'lost').length})</span>
+            Lost ({lostFoundItems.filter(i => i.type === 'lost').length})
           </button>
-
           <button
             onClick={() => setShowFound(!showFound)}
-            className={`px-3 py-1.5 rounded-xl font-semibold border transition-all flex items-center space-x-1.5 ${
-              showFound 
-                ? 'bg-pastel-sky-light text-pastel-sky-dark border-pastel-sky-border shadow-soft-sm' 
-                : 'bg-stone-50 text-stone-400 border-stone-200'
+            className={`px-2.5 py-1.5 rounded-lg font-medium border transition-all ${
+              showFound ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-500 border-stone-200'
             }`}
           >
-            <span>📦 Found Items ({lostFoundItems.filter(i => i.type === 'found').length})</span>
+            Found ({lostFoundItems.filter(i => i.type === 'found').length})
           </button>
         </div>
       </div>
 
-      {/* Quick Jump Landmark Pills */}
-      <div className="flex items-center space-x-2 overflow-x-auto pb-1 no-scrollbar text-xs">
-        <span className="text-stone-400 font-semibold uppercase text-[10px] pl-1 shrink-0">Jump To:</span>
+      {/* Jump To Landmark Pills */}
+      <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
+        <span className="text-stone-400 font-semibold text-[11px] shrink-0">Jump to:</span>
         {CAMPUS_LANDMARKS.map((lm) => (
           <button
             key={lm.name}
             onClick={() => setFlyCoords([lm.lat, lm.lng])}
-            className="whitespace-nowrap px-3 py-1.5 rounded-xl bg-surface hover:bg-stone-50 text-stone-600 font-medium border border-stone-200/80 transition-all flex items-center space-x-1"
+            className="whitespace-nowrap px-2.5 py-1 rounded-lg bg-white hover:bg-stone-100 text-stone-700 border border-stone-200/80 transition-all flex items-center space-x-1"
           >
-            <Navigation className="w-3 h-3 text-stone-400" />
+            <Navigation className="w-2.5 h-2.5 text-stone-400" />
             <span>{lm.name}</span>
           </button>
         ))}
       </div>
 
-      {/* Map Container */}
-      <div className="w-full h-[580px] rounded-3xl overflow-hidden border border-stone-200/80 shadow-soft-md relative">
+      {/* Map */}
+      <div className="w-full h-[540px] rounded-2xl overflow-hidden border border-stone-200 shadow-card relative">
         <MapContainer
           center={initialCenter}
           zoom={16}
           scrollWheelZoom={true}
           className="w-full h-full"
         >
-          {/* CartoDB Positron - Beautiful, clean pastel minimalist tile map */}
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+            attribution='&copy; CARTO'
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
 
           <MapFlyTo targetCoords={flyCoords} />
 
-          {/* Civic Issue Pins */}
+          {/* Civic Issues */}
           {showCivic && civicIssues.map((issue) => {
             if (!issue.location?.lat || !issue.location?.lng) return null;
-            const icon = createCustomCivicIcon(issue.category, issue.urgencyUpvotes, issue.status === 'resolved');
+            const icon = createMinimalCivicIcon(issue.category, issue.status === 'resolved', issue.urgencyUpvotes);
 
             return (
               <Marker
@@ -179,33 +155,23 @@ export default function InteractiveMap({
                 icon={icon}
               >
                 <Popup>
-                  <div className="p-3.5 max-w-xs space-y-2 text-stone-900 font-sans">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-pastel-peach-light text-pastel-peach-dark uppercase">
-                        {issue.category.replace('_', ' ')}
-                      </span>
-                      <span className="text-[10px] font-semibold text-stone-500 capitalize">
-                        {issue.status.replace('_', ' ')}
-                      </span>
+                  <div className="p-3 max-w-xs space-y-1.5 text-stone-900 font-sans text-xs">
+                    <div className="flex items-center justify-between text-[10px] text-stone-500">
+                      <span className="font-semibold capitalize">{issue.category}</span>
+                      <span className="capitalize">{issue.status}</span>
                     </div>
 
-                    <h4 className="font-bold text-xs text-stone-900 line-clamp-2 leading-snug">
-                      {issue.title}
-                    </h4>
+                    <h4 className="font-bold text-xs leading-snug">{issue.title}</h4>
 
-                    <div className="flex items-center justify-between text-[11px] text-stone-500 pt-1 border-t border-stone-100">
-                      <span className="flex items-center space-x-1 text-pastel-peach-dark font-bold">
-                        <Flame className="w-3 h-3 fill-current" />
-                        <span>{issue.urgencyUpvotes} Upvotes</span>
-                      </span>
-                      <span>{issue.location?.name}</span>
+                    <div className="text-[11px] text-stone-500">
+                      📍 {issue.location?.name}
                     </div>
 
                     <button
                       onClick={() => onSelectCivicIssue(issue)}
-                      className="w-full mt-1.5 py-1.5 bg-brand-primary text-white text-xs font-bold rounded-xl hover:bg-brand-primaryHover transition-all text-center"
+                      className="w-full mt-1 py-1 bg-stone-900 text-white rounded-lg font-semibold text-center"
                     >
-                      View Issue Details ➔
+                      View Details
                     </button>
                   </div>
                 </Popup>
@@ -213,13 +179,13 @@ export default function InteractiveMap({
             );
           })}
 
-          {/* Lost & Found Pins */}
+          {/* Lost & Found */}
           {lostFoundItems.map((item) => {
             if (!item.location?.lat || !item.location?.lng) return null;
             if (item.type === 'lost' && !showLost) return null;
             if (item.type === 'found' && !showFound) return null;
 
-            const icon = createCustomLostFoundIcon(item.type, item.status === 'reunited');
+            const icon = createMinimalLostFoundIcon(item.type, item.status === 'reunited');
 
             return (
               <Marker
@@ -228,35 +194,23 @@ export default function InteractiveMap({
                 icon={icon}
               >
                 <Popup>
-                  <div className="p-3.5 max-w-xs space-y-2 text-stone-900 font-sans">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                        item.status === 'reunited'
-                          ? 'bg-pastel-mint text-pastel-mint-dark'
-                          : item.type === 'lost'
-                          ? 'bg-pastel-peach text-pastel-peach-dark'
-                          : 'bg-pastel-sky text-pastel-sky-dark'
-                      }`}>
-                        {item.status === 'reunited' ? 'REUNITED 🎉' : item.type.toUpperCase()}
-                      </span>
-                      <span className="text-[10px] font-semibold text-stone-500">
-                        {item.category}
-                      </span>
+                  <div className="p-3 max-w-xs space-y-1.5 text-stone-900 font-sans text-xs">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="font-bold uppercase text-stone-600">{item.type}</span>
+                      <span className="capitalize text-stone-500">{item.category}</span>
                     </div>
 
-                    <h4 className="font-bold text-xs text-stone-900 line-clamp-2 leading-snug">
-                      {item.title}
-                    </h4>
+                    <h4 className="font-bold text-xs leading-snug">{item.title}</h4>
 
-                    <div className="text-[11px] text-stone-500 truncate">
+                    <div className="text-[11px] text-stone-500">
                       📍 {item.locationName}
                     </div>
 
                     <button
                       onClick={() => onSelectLostFound(item)}
-                      className="w-full mt-1.5 py-1.5 bg-brand-primary text-white text-xs font-bold rounded-xl hover:bg-brand-primaryHover transition-all text-center"
+                      className="w-full mt-1 py-1 bg-stone-900 text-white rounded-lg font-semibold text-center"
                     >
-                      Inspect Item ➔
+                      View Item
                     </button>
                   </div>
                 </Popup>
