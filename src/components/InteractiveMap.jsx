@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polygon, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
   MapPin, 
@@ -10,7 +10,8 @@ import {
   Compass,
   Satellite,
   Building2,
-  Tag
+  Filter,
+  Plus
 } from 'lucide-react';
 import { 
   CAMPUS_LANDMARKS, 
@@ -20,22 +21,26 @@ import {
   IIEST_WIKI_MAP_URL 
 } from '../types';
 
-// Custom Building Floating Label Tag Icon
-function createBuildingLabelIcon(name, code, color) {
+// Custom Building Floating Label Tag Icon from maps.iiest.wiki
+function createBuildingLabelIcon(name, code, emoji, color) {
   return L.divIcon({
     className: 'custom-building-label',
     html: `
-      <div style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); border: 1.5px solid ${color}; color: #FFFFFF; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 4px; pointer-events: none;">
-        <span style="background: ${color}; width: 6px; height: 6px; border-radius: 50%;"></span>
-        <span>${name}</span>
+      <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer; transform: translate3d(0,0,0);">
+        <div style="background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(6px); border: 1.5px solid ${color}; color: #FFFFFF; padding: 2.5px 8px; border-radius: 9px; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 5px;">
+          <span>${emoji || '📍'}</span>
+          <span>${name}</span>
+          <span style="background: ${color}; color: #0F172A; font-size: 9px; font-weight: 800; padding: 0.5px 4px; border-radius: 4px;">${code}</span>
+        </div>
       </div>
     `,
-    iconSize: [120, 24],
-    iconAnchor: [60, 12],
+    iconSize: [140, 26],
+    iconAnchor: [70, 13],
+    popupAnchor: [0, -14],
   });
 }
 
-// Custom High-Contrast Satellite Markers
+// Custom Satellite Civic & Lost Pin
 function createSatelliteCivicIcon(category, isResolved, urgency) {
   const isUrgent = urgency >= 30;
   const bg = isResolved 
@@ -79,15 +84,15 @@ function createSatelliteLostFoundIcon(type, isReunited) {
   return L.divIcon({
     className: 'custom-map-pin',
     html: `
-      <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px;">
-        <div style="width: 32px; height: 32px; border-radius: 10px; background: ${bg}; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px ${shadowColor}; font-size: 15px; cursor: pointer;">
+      <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">
+        <div style="width: 30px; height: 30px; border-radius: 10px; background: ${bg}; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px ${shadowColor}; font-size: 14px; cursor: pointer;">
           ${emoji}
         </div>
       </div>
     `,
-    iconSize: [38, 38],
-    iconAnchor: [19, 19],
-    popupAnchor: [0, -19],
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
   });
 }
 
@@ -106,7 +111,7 @@ export default function InteractiveMap({
   lostFoundItems, 
   onSelectCivicIssue, 
   onSelectLostFound,
-  isDark
+  isDark 
 }) {
   const [mapMode, setMapMode] = useState('satellite'); // 'satellite', 'vector', 'iiest_wiki'
   const [showBuildings, setShowBuildings] = useState(true);
@@ -127,11 +132,11 @@ export default function InteractiveMap({
             </h1>
             <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-md flex items-center space-x-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Aerial Overlays Active</span>
+              <span>maps.iiest.wiki Pins</span>
             </span>
           </div>
           <p className="text-stone-500 dark:text-stone-400 text-xs sm:text-sm mt-0.5">
-            High-res satellite view with labeled IIEST Shibpur buildings & geotagged reports.
+            Verified campus landmark pins, building codes, hazard reports, and lost items across IIEST Shibpur.
           </p>
         </div>
 
@@ -194,7 +199,7 @@ export default function InteractiveMap({
             {/* Layer Filter Toggles */}
             <div className="flex items-center gap-1.5 flex-wrap text-xs">
               
-              {/* Building Overlay Switcher */}
+              {/* IIEST Campus Landmark Pins Switcher */}
               <button
                 onClick={() => setShowBuildings(!showBuildings)}
                 className={`px-3 py-1.5 rounded-xl font-bold border transition-all flex items-center space-x-1.5 ${
@@ -204,7 +209,7 @@ export default function InteractiveMap({
                 }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
-                <span>Building Labels ({IIEST_CAMPUS_BUILDINGS.length})</span>
+                <span>IIEST Campus Pins ({IIEST_CAMPUS_BUILDINGS.length})</span>
               </button>
 
               <button
@@ -244,20 +249,20 @@ export default function InteractiveMap({
             {/* Landmark Quick Jump Pills */}
             <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
               <span className="text-stone-400 font-semibold text-[11px] shrink-0">Fly to:</span>
-              {IIEST_CAMPUS_BUILDINGS.slice(0, 6).map((b) => (
+              {IIEST_CAMPUS_BUILDINGS.map((b) => (
                 <button
                   key={b.id}
                   onClick={() => setFlyCoords(b.center)}
                   className="whitespace-nowrap px-2.5 py-1 rounded-xl bg-white/90 dark:bg-stone-800/90 hover:bg-white dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-all flex items-center space-x-1 shadow-subtle"
                 >
-                  <Navigation className="w-2.5 h-2.5 text-stone-400" />
+                  <span>{b.emoji}</span>
                   <span>{b.shortName}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Leaflet Satellite Map Container with Building Overlays */}
+          {/* Leaflet Satellite Map Container with Verified Building Pins */}
           <div className="w-full h-[580px] rounded-3xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-card-dark relative">
             <MapContainer
               center={IIEST_MAP_CENTER}
@@ -296,9 +301,9 @@ export default function InteractiveMap({
 
               <MapFlyTo targetCoords={flyCoords} />
 
-              {/* CUSTOM IIEST BUILDING POLYGONS & FLOATING LABELS */}
+              {/* VERIFIED IIEST CAMPUS LANDMARK PINS & BOUNDARIES */}
               {showBuildings && IIEST_CAMPUS_BUILDINGS.map((building) => {
-                const labelIcon = createBuildingLabelIcon(building.shortName, building.code, building.color);
+                const labelIcon = createBuildingLabelIcon(building.shortName, building.code, building.emoji, building.color);
 
                 return (
                   <React.Fragment key={building.id}>
@@ -310,25 +315,51 @@ export default function InteractiveMap({
                         fillColor: building.color,
                         fillOpacity: 0.28,
                         weight: 2,
-                        dashArray: '4, 4',
+                        dashArray: '3, 3',
                       }}
                     >
                       <Popup>
-                        <div className="p-2 text-stone-900 dark:text-white text-xs font-sans space-y-1">
-                          <span className="font-bold text-[10px] uppercase text-indigo-600 dark:text-indigo-400">
-                            {building.category}
-                          </span>
-                          <h4 className="font-bold text-sm leading-tight">{building.name}</h4>
-                          <p className="text-stone-500 dark:text-stone-400 text-xs">{building.description}</p>
+                        <div className="p-3 text-stone-900 dark:text-white text-xs font-sans space-y-1.5 max-w-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded">
+                              {building.category}
+                            </span>
+                            <span className="font-mono text-stone-400 font-bold">{building.code}</span>
+                          </div>
+                          
+                          <h4 className="font-bold text-sm leading-snug">{building.name}</h4>
+                          <p className="text-stone-500 dark:text-stone-400 text-xs leading-relaxed">{building.description}</p>
+                          
+                          <div className="pt-1 text-[11px] text-stone-400 border-t border-stone-100 dark:border-stone-800">
+                            📍 {building.center[0].toFixed(4)}° N, {building.center[1].toFixed(4)}° E
+                          </div>
                         </div>
                       </Popup>
                     </Polygon>
 
-                    {/* Floating Label Badge */}
+                    {/* Labeled Building Marker Pin */}
                     <Marker
                       position={building.center}
                       icon={labelIcon}
-                    />
+                    >
+                      <Popup>
+                        <div className="p-3 text-stone-900 dark:text-white text-xs font-sans space-y-1.5 max-w-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded">
+                              {building.category}
+                            </span>
+                            <span className="font-mono text-stone-400 font-bold">{building.code}</span>
+                          </div>
+                          
+                          <h4 className="font-bold text-sm leading-snug">{building.name}</h4>
+                          <p className="text-stone-500 dark:text-stone-400 text-xs leading-relaxed">{building.description}</p>
+                          
+                          <div className="pt-1 text-[11px] text-stone-400 border-t border-stone-100 dark:border-stone-800">
+                            📍 {building.center[0].toFixed(4)}° N, {building.center[1].toFixed(4)}° E
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
                   </React.Fragment>
                 );
               })}
