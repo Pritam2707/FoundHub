@@ -109,14 +109,14 @@ export default function LostFoundView({
             className="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-subtle"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>I Lost an Item</span>
+            <span>I Lost An Item</span>
           </button>
           <button
             onClick={() => onOpenCreateModal('found')}
             className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-subtle"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>I Found an Item</span>
+            <span>I Found An Item</span>
           </button>
         </div>
       </div>
