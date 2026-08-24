@@ -32,11 +32,11 @@ export default function App() {
   const [civicIssues, setCivicIssues] = useState([]);
   const [lostFoundItems, setLostFoundItems] = useState([]);
 
-  // Theme Management (Light / Dark)
+  // Theme Management (Dark Mode by default, user-controlled toggle)
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('civicbloom_theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'light') return false;
+    return true; // Default to Dark theme
   });
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function App() {
   }, [isDark]);
 
   const toggleTheme = () => {
-    setIsDark(!isDark);
+    setIsDark((prev) => !prev);
   };
 
   // Modals state
