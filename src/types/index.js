@@ -49,13 +49,21 @@ export const LOST_FOUND_CATEGORIES = [
   { id: 'other', label: 'Other Items', icon: 'Package' },
 ];
 
+// IIEST Shibpur Campus Landmarks & Exact Coordinates (from maps.iiest.wiki)
 export const CAMPUS_LANDMARKS = [
-  { name: 'Central Library & Plaza', lat: 28.5455, lng: 77.1920, area: 'Academic Core' },
-  { name: 'Science & Tech Complex', lat: 28.5468, lng: 77.1932, area: 'North Wing' },
-  { name: 'Student Quad & Cafeteria', lat: 28.5442, lng: 77.1915, area: 'Student Center' },
-  { name: 'North Gate & Shuttle Stop', lat: 28.5480, lng: 77.1908, area: 'Main Entrance' },
-  { name: 'Engineering Workshop Block', lat: 28.5435, lng: 77.1945, area: 'South Wing' },
-  { name: 'Sports Arena & Grounds', lat: 28.5420, lng: 77.1900, area: 'Athletics' },
-  { name: 'Central Plaza & Fountain', lat: 28.5450, lng: 77.1925, area: 'Center' },
-  { name: 'Innovation Hub & Labs', lat: 28.5460, lng: 77.1950, area: 'East Wing' },
+  { name: 'Main Academic Building & Clock Tower', lat: 22.5558, lng: 88.3075, area: 'Administrative Core' },
+  { name: '8-Storied Building (Science & Tech)', lat: 22.5545, lng: 88.3082, area: 'Academic Block' },
+  { name: 'Ramanujan Central Library', lat: 22.5550, lng: 88.3070, area: 'Academic Core' },
+  { name: 'Netaji Bhavan', lat: 22.5562, lng: 88.3060, area: 'North Academic Wing' },
+  { name: 'Oval Ground', lat: 22.5540, lng: 88.3055, area: 'Sports & Recreation' },
+  { name: 'Lords Ground', lat: 22.5570, lng: 88.3085, area: 'Athletics Ground' },
+  { name: 'Student Activity Centre (SAC) & Gym', lat: 22.5535, lng: 88.3068, area: 'Student Center' },
+  { name: 'Wolfenden Hall / Macdonald Hall', lat: 22.5565, lng: 88.3048, area: 'Hostel Zone' },
+  { name: 'First Gate (Main Entrance)', lat: 22.5578, lng: 88.3090, area: 'Campus Gate' },
+  { name: 'Health Centre & Hospital', lat: 22.5548, lng: 88.3040, area: 'Medical Unit' },
+  { name: 'Institute Canteen & Nescafe', lat: 22.5555, lng: 88.3062, area: 'Dining & Plaza' },
 ];
+
+export const IIEST_MAP_CENTER = [22.5552, 88.3065];
+export const IIEST_MAP_ZOOM = 17;
+export const IIEST_WIKI_MAP_URL = 'https://maps.iiest.wiki';
