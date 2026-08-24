@@ -63,18 +63,9 @@ export function subscribeToCivicIssues(onUpdate) {
   if (db && isFirebaseConfigured) {
     const q = query(collection(db, 'civic_issues'), orderBy('reportedAt', 'desc'));
     return onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        const issues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        saveCivicIssues(issues);
-        onUpdate(issues);
-      } else {
-        // If firestore is empty, seed initial data
-        const initial = getStoredCivicIssues();
-        initial.forEach(issue => {
-          setDoc(doc(db, 'civic_issues', issue.id), issue);
-        });
-        onUpdate(initial);
-      }
+      const issues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      saveCivicIssues(issues);
+      onUpdate(issues);
     }, (error) => {
       console.warn('Firestore subscription fallback to local storage:', error);
       onUpdate(getStoredCivicIssues());
@@ -94,18 +85,9 @@ export function subscribeToLostFound(onUpdate) {
   if (db && isFirebaseConfigured) {
     const q = query(collection(db, 'lost_found_items'), orderBy('timestamp', 'desc'));
     return onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        saveLostFound(items);
-        onUpdate(items);
-      } else {
-        // If firestore is empty, seed initial data
-        const initial = getStoredLostFound();
-        initial.forEach(item => {
-          setDoc(doc(db, 'lost_found_items', item.id), item);
-        });
-        onUpdate(initial);
-      }
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      saveLostFound(items);
+      onUpdate(items);
     }, (error) => {
       console.warn('Firestore subscription fallback to local storage:', error);
       onUpdate(getStoredLostFound());
