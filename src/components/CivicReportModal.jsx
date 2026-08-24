@@ -14,6 +14,7 @@ import {
 import { CIVIC_CATEGORIES, CAMPUS_LANDMARKS } from '../types';
 import { findNearbyCivicDuplicates } from '../services/matchingEngine';
 import Icon from './Icon';
+import EdgeStoreUploader from './EdgeStoreUploader';
 
 // Sample pastel photos users can click to quickly attach
 const SAMPLE_PHOTOS = [
@@ -336,41 +337,44 @@ export default function CivicReportModal({
             </div>
           </div>
 
-          {/* Photo Attachment */}
+          {/* Photo Attachment via EdgeStore */}
           <div>
             <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-              Attach Photo
+              Attach Photo Proof (EdgeStore Cloud Bucket)
             </label>
             
-            {/* Quick sample pickers */}
-            <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1">
-              {SAMPLE_PHOTOS.map((sp, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => { setImageUrl(sp.url); setCustomPhotoInput(''); }}
-                  className={`relative shrink-0 w-16 h-14 rounded-xl overflow-hidden border-2 transition-all ${
-                    imageUrl === sp.url && !customPhotoInput
-                      ? 'border-brand-primary shadow-soft-sm'
-                      : 'border-stone-200 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <img src={sp.url} alt={sp.label} className="w-full h-full object-cover" />
-                  <span className="absolute bottom-0 inset-x-0 bg-stone-900/60 text-white text-[9px] text-center truncate py-0.5">
-                    {sp.label}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <EdgeStoreUploader
+              initialUrl={imageUrl}
+              onUploadComplete={(url) => {
+                if (url) {
+                  setImageUrl(url);
+                  setCustomPhotoInput('');
+                }
+              }}
+            />
 
-            <div className="flex items-center space-x-2">
-              <input
-                type="url"
-                value={customPhotoInput}
-                onChange={(e) => setCustomPhotoInput(e.target.value)}
-                placeholder="Or paste custom image URL..."
-                className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-              />
+            {/* Quick sample pickers */}
+            <div className="mt-2.5">
+              <span className="text-[11px] text-stone-400 block mb-1.5">Or choose sample test photo:</span>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {SAMPLE_PHOTOS.map((sp, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => { setImageUrl(sp.url); setCustomPhotoInput(''); }}
+                    className={`relative shrink-0 w-16 h-14 rounded-xl overflow-hidden border-2 transition-all ${
+                      imageUrl === sp.url && !customPhotoInput
+                        ? 'border-brand-primary shadow-soft-sm'
+                        : 'border-stone-200 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={sp.url} alt={sp.label} className="w-full h-full object-cover" />
+                    <span className="absolute bottom-0 inset-x-0 bg-stone-900/60 text-white text-[9px] text-center truncate py-0.5">
+                      {sp.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

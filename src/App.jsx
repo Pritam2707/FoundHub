@@ -8,6 +8,15 @@ import LostFoundModal from './components/LostFoundModal';
 import LostFoundDetailModal from './components/LostFoundDetailModal';
 import InteractiveMap from './components/InteractiveMap';
 import AdminPanel from './components/AdminPanel';
+import PWAInstallBanner from './components/PWAInstallBanner';
+import { EdgeStoreProvider } from './services/edgestore';
+import { 
+  subscribeToCivicIssues, 
+  subscribeToLostFound, 
+  syncCivicIssue, 
+  syncLostFoundItem,
+  isFirebaseConfigured
+} from './services/firebase';
 import { 
   getStoredCivicIssues, 
   saveCivicIssues, 
@@ -15,7 +24,7 @@ import {
   saveLostFound,
   resetAllToDefault 
 } from './services/storage';
-import { Sparkles, Heart, ShieldCheck, Github } from 'lucide-react';
+import { Sparkles, Heart, ShieldCheck, Database, Cloud } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('civic'); // 'civic', 'lostfound', 'map', 'admin'
@@ -30,21 +39,29 @@ export default function App() {
   const [isLostFoundModalOpen, setIsLostFoundModalOpen] = useState(false);
   const [lostFoundModalType, setLostFoundModalType] = useState('lost');
 
-  // Load from local storage on mount
+  // Real-time Firestore & Local Persistence Subscriptions
   useEffect(() => {
-    const issues = getStoredCivicIssues();
-    const lfItems = getStoredLostFound();
-    setCivicIssues(issues);
-    setLostFoundItems(lfItems);
+    const unsubCivic = subscribeToCivicIssues((issues) => {
+      setCivicIssues(issues);
+    });
+
+    const unsubLostFound = subscribeToLostFound((items) => {
+      setLostFoundItems(items);
+    });
+
+    return () => {
+      if (typeof unsubCivic === 'function') unsubCivic();
+      if (typeof unsubLostFound === 'function') unsubLostFound();
+    };
   }, []);
 
-  // Save civic issues on change
+  // Save and Sync civic issues
   const updateAndSaveCivicIssues = (newIssues) => {
     setCivicIssues(newIssues);
     saveCivicIssues(newIssues);
   };
 
-  // Save lost & found on change
+  // Save and Sync lost & found
   const updateAndSaveLostFound = (newItems) => {
     setLostFoundItems(newItems);
     saveLostFound(newItems);
@@ -55,17 +72,18 @@ export default function App() {
     const updated = civicIssues.map((issue) => {
       if (issue.id === issueId) {
         const isUpvoted = issue.userUpvoted;
-        return {
+        const modified = {
           ...issue,
           userUpvoted: !isUpvoted,
           urgencyUpvotes: isUpvoted ? Math.max(0, issue.urgencyUpvotes - 1) : issue.urgencyUpvotes + 1,
         };
+        syncCivicIssue(modified);
+        return modified;
       }
       return issue;
     });
     updateAndSaveCivicIssues(updated);
 
-    // If modal is open, also sync modal view
     if (selectedCivicIssue?.id === issueId) {
       setSelectedCivicIssue(updated.find(i => i.id === issueId));
     }
@@ -75,7 +93,9 @@ export default function App() {
   const handleRateSeverity = (issueId, severityLevel) => {
     const updated = civicIssues.map((issue) => {
       if (issue.id === issueId) {
-        return { ...issue, severity: severityLevel };
+        const modified = { ...issue, severity: severityLevel };
+        syncCivicIssue(modified);
+        return modified;
       }
       return issue;
     });
@@ -90,7 +110,9 @@ export default function App() {
   const handleVerifyIssue = (issueId) => {
     const updated = civicIssues.map((issue) => {
       if (issue.id === issueId) {
-        return { ...issue, verifiedCount: (issue.verifiedCount || 0) + 1 };
+        const modified = { ...issue, verifiedCount: (issue.verifiedCount || 0) + 1 };
+        syncCivicIssue(modified);
+        return modified;
       }
       return issue;
     });
@@ -105,10 +127,12 @@ export default function App() {
   const handleAddCivicComment = (issueId, comment) => {
     const updated = civicIssues.map((issue) => {
       if (issue.id === issueId) {
-        return {
+        const modified = {
           ...issue,
           comments: [...(issue.comments || []), comment],
         };
+        syncCivicIssue(modified);
+        return modified;
       }
       return issue;
     });
@@ -128,11 +152,13 @@ export default function App() {
           timestamp: new Date().toISOString(),
           note: note || `Status transitioned to ${newStatus}`,
         };
-        return {
+        const modified = {
           ...issue,
           status: newStatus,
           statusHistory: [...(issue.statusHistory || []), historyEntry],
         };
+        syncCivicIssue(modified);
+        return modified;
       }
       return issue;
     });
@@ -153,23 +179,27 @@ export default function App() {
   const handleCreateCivicIssue = (newIssue) => {
     const updated = [newIssue, ...civicIssues];
     updateAndSaveCivicIssues(updated);
+    syncCivicIssue(newIssue);
   };
 
   // Create new lost & found item
   const handleCreateLostFoundItem = (newItem) => {
     const updated = [newItem, ...lostFoundItems];
     updateAndSaveLostFound(updated);
+    syncLostFoundItem(newItem);
   };
 
   // Mark Lost & Found item as Reunited
   const handleMarkLostFoundReunited = (itemId) => {
     const updated = lostFoundItems.map((item) => {
       if (item.id === itemId) {
-        return {
+        const modified = {
           ...item,
           status: 'reunited',
           reunitedDate: new Date().toISOString(),
         };
+        syncLostFoundItem(modified);
+        return modified;
       }
       return item;
     });
@@ -184,10 +214,12 @@ export default function App() {
   const handleAddLostFoundComment = (itemId, comment) => {
     const updated = lostFoundItems.map((item) => {
       if (item.id === itemId) {
-        return {
+        const modified = {
           ...item,
           comments: [...(item.comments || []), comment],
         };
+        syncLostFoundItem(modified);
+        return modified;
       }
       return item;
     });
@@ -204,6 +236,9 @@ export default function App() {
       const reset = resetAllToDefault();
       setCivicIssues(reset.civicIssues);
       setLostFoundItems(reset.lostFound);
+      // Sync defaults to Firestore
+      reset.civicIssues.forEach(syncCivicIssue);
+      reset.lostFound.forEach(syncLostFoundItem);
     }
   };
 
@@ -217,131 +252,157 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-canvas text-brand-dark flex flex-col font-sans selection:bg-pastel-lavender">
-      
-      {/* Top Navbar */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenReportModal={handleOpenReportModal}
-        isAdmin={isAdmin}
-        setIsAdmin={setIsAdmin}
-        civicCount={civicIssues.length}
-        lostFoundCount={lostFoundItems.length}
-      />
-
-      {/* Main App Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+    <EdgeStoreProvider>
+      <div className="min-h-screen bg-canvas text-brand-dark flex flex-col font-sans selection:bg-pastel-lavender">
         
-        {/* Civic Issues View */}
-        {activeTab === 'civic' && (
-          <CivicIssuesView
-            issues={civicIssues}
-            onSelectIssue={(issue) => setSelectedCivicIssue(issue)}
-            onUpvoteIssue={handleUpvoteCivicIssue}
-            onOpenReportModal={() => setIsCivicModalOpen(true)}
-          />
-        )}
-
-        {/* Lost & Found View */}
-        {activeTab === 'lostfound' && (
-          <LostFoundView
-            items={lostFoundItems}
-            onSelectItem={(item) => setSelectedLostFoundItem(item)}
-            onOpenCreateModal={(type) => {
-              setLostFoundModalType(type);
-              setIsLostFoundModalOpen(true);
-            }}
-          />
-        )}
-
-        {/* Live Interactive Map */}
-        {activeTab === 'map' && (
-          <InteractiveMap
-            civicIssues={civicIssues}
-            lostFoundItems={lostFoundItems}
-            onSelectCivicIssue={(issue) => setSelectedCivicIssue(issue)}
-            onSelectLostFound={(item) => setSelectedLostFoundItem(item)}
-          />
-        )}
-
-        {/* Facility Ops & Insights */}
-        {activeTab === 'admin' && (
-          <AdminPanel
-            civicIssues={civicIssues}
-            lostFoundItems={lostFoundItems}
-            onUpdateCivicStatus={handleUpdateCivicStatus}
-            onResetData={handleResetData}
-          />
-        )}
-
-      </main>
-
-      {/* MODALS */}
-
-      {/* Civic Issue Report Modal with Duplicate Warning */}
-      <CivicReportModal
-        isOpen={isCivicModalOpen}
-        onClose={() => setIsCivicModalOpen(false)}
-        onSubmit={handleCreateCivicIssue}
-        existingIssues={civicIssues}
-        onUpvoteAndClose={handleUpvoteAndCloseDuplicate}
-      />
-
-      {/* Civic Issue Full Detail Modal */}
-      {selectedCivicIssue && (
-        <CivicDetailModal
-          issue={selectedCivicIssue}
-          onClose={() => setSelectedCivicIssue(null)}
-          onUpvote={handleUpvoteCivicIssue}
-          onRateSeverity={handleRateSeverity}
-          onVerifyIssue={handleVerifyIssue}
-          onAddComment={handleAddCivicComment}
-          onUpdateStatus={handleUpdateCivicStatus}
+        {/* Top Navbar */}
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenReportModal={handleOpenReportModal}
           isAdmin={isAdmin}
+          setIsAdmin={setIsAdmin}
+          civicCount={civicIssues.length}
+          lostFoundCount={lostFoundItems.length}
         />
-      )}
 
-      {/* Lost & Found Post Modal */}
-      <LostFoundModal
-        isOpen={isLostFoundModalOpen}
-        onClose={() => setIsLostFoundModalOpen(false)}
-        onSubmit={handleCreateLostFoundItem}
-        initialType={lostFoundModalType}
-      />
-
-      {/* Lost & Found Detail Modal */}
-      {selectedLostFoundItem && (
-        <LostFoundDetailModal
-          item={selectedLostFoundItem}
-          allItems={lostFoundItems}
-          onClose={() => setSelectedLostFoundItem(null)}
-          onMarkReunited={handleMarkLostFoundReunited}
-          onAddComment={handleAddLostFoundComment}
-          onSelectItem={(item) => setSelectedLostFoundItem(item)}
-        />
-      )}
-
-      {/* Soft Minimal Footer */}
-      <footer className="mt-auto border-t border-stone-200/60 bg-surface py-6 px-4 text-center text-xs text-stone-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-brand-dark">CivicBloom & FoundHub</span>
-            <span>•</span>
-            <span>Verified Submit ➔ Verify ➔ Resolve Pipeline</span>
-          </div>
-
-          <div className="flex items-center space-x-4 text-stone-400">
-            <span className="flex items-center space-x-1">
-              <Sparkles className="w-3.5 h-3.5 text-pastel-lavender-dark" />
-              <span>Smart Proximity & Cross-Matching</span>
-            </span>
-            <span>•</span>
-            <span className="text-stone-500">Pastel Minimal UI</span>
+        {/* Real-time Cloud Status Bar */}
+        <div className="bg-white/60 border-b border-stone-200/50 py-1 px-4 text-[11px] text-stone-500">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="flex items-center space-x-1">
+                <Database className="w-3 h-3 text-pastel-peach-dark" />
+                <span>Firestore: <strong>{isFirebaseConfigured ? 'Live Real-Time Sync' : 'Offline Cache Active'}</strong></span>
+              </span>
+              <span>•</span>
+              <span className="flex items-center space-x-1">
+                <Cloud className="w-3 h-3 text-pastel-sky-dark" />
+                <span>EdgeStore: <strong>Cloud Bucket Ready</strong></span>
+              </span>
+            </div>
+            <div className="hidden sm:flex items-center space-x-1.5 text-pastel-mint-dark font-medium">
+              <span className="w-2 h-2 rounded-full bg-pastel-mint-dark animate-pulse" />
+              <span>Node.js Backend & PWA Ready</span>
+            </div>
           </div>
         </div>
-      </footer>
 
-    </div>
+        {/* Main App Container */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+          
+          {/* Civic Issues View */}
+          {activeTab === 'civic' && (
+            <CivicIssuesView
+              issues={civicIssues}
+              onSelectIssue={(issue) => setSelectedCivicIssue(issue)}
+              onUpvoteIssue={handleUpvoteCivicIssue}
+              onOpenReportModal={() => setIsCivicModalOpen(true)}
+            />
+          )}
+
+          {/* Lost & Found View */}
+          {activeTab === 'lostfound' && (
+            <LostFoundView
+              items={lostFoundItems}
+              onSelectItem={(item) => setSelectedLostFoundItem(item)}
+              onOpenCreateModal={(type) => {
+                setLostFoundModalType(type);
+                setIsLostFoundModalOpen(true);
+              }}
+            />
+          )}
+
+          {/* Live Interactive Map */}
+          {activeTab === 'map' && (
+            <InteractiveMap
+              civicIssues={civicIssues}
+              lostFoundItems={lostFoundItems}
+              onSelectCivicIssue={(issue) => setSelectedCivicIssue(issue)}
+              onSelectLostFound={(item) => setSelectedLostFoundItem(item)}
+            />
+          )}
+
+          {/* Facility Ops & Insights */}
+          {activeTab === 'admin' && (
+            <AdminPanel
+              civicIssues={civicIssues}
+              lostFoundItems={lostFoundItems}
+              onUpdateCivicStatus={handleUpdateCivicStatus}
+              onResetData={handleResetData}
+            />
+          )}
+
+        </main>
+
+        {/* MODALS */}
+
+        {/* Civic Issue Report Modal with Duplicate Warning & EdgeStore Upload */}
+        <CivicReportModal
+          isOpen={isCivicModalOpen}
+          onClose={() => setIsCivicModalOpen(false)}
+          onSubmit={handleCreateCivicIssue}
+          existingIssues={civicIssues}
+          onUpvoteAndClose={handleUpvoteAndCloseDuplicate}
+        />
+
+        {/* Civic Issue Full Detail Modal */}
+        {selectedCivicIssue && (
+          <CivicDetailModal
+            issue={selectedCivicIssue}
+            onClose={() => setSelectedCivicIssue(null)}
+            onUpvote={handleUpvoteCivicIssue}
+            onRateSeverity={handleRateSeverity}
+            onVerifyIssue={handleVerifyIssue}
+            onAddComment={handleAddCivicComment}
+            onUpdateStatus={handleUpdateCivicStatus}
+            isAdmin={isAdmin}
+          />
+        )}
+
+        {/* Lost & Found Post Modal with EdgeStore Upload */}
+        <LostFoundModal
+          isOpen={isLostFoundModalOpen}
+          onClose={() => setIsLostFoundModalOpen(false)}
+          onSubmit={handleCreateLostFoundItem}
+          initialType={lostFoundModalType}
+        />
+
+        {/* Lost & Found Detail Modal */}
+        {selectedLostFoundItem && (
+          <LostFoundDetailModal
+            item={selectedLostFoundItem}
+            allItems={lostFoundItems}
+            onClose={() => setSelectedLostFoundItem(null)}
+            onMarkReunited={handleMarkLostFoundReunited}
+            onAddComment={handleAddLostFoundComment}
+            onSelectItem={(item) => setSelectedLostFoundItem(item)}
+          />
+        )}
+
+        {/* PWA Mobile & Desktop Install Prompt Banner */}
+        <PWAInstallBanner />
+
+        {/* Soft Minimal Footer */}
+        <footer className="mt-auto border-t border-stone-200/60 bg-surface py-6 px-4 text-center text-xs text-stone-500">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-brand-dark">CivicBloom & FoundHub</span>
+              <span>•</span>
+              <span>Submit ➔ Verify ➔ Resolve Pipeline</span>
+            </div>
+
+            <div className="flex items-center space-x-4 text-stone-400">
+              <span className="flex items-center space-x-1">
+                <Sparkles className="w-3.5 h-3.5 text-pastel-lavender-dark" />
+                <span>PWA • Firebase Firestore • EdgeStore</span>
+              </span>
+              <span>•</span>
+              <span className="text-stone-500">MIT Licensed</span>
+            </div>
+          </div>
+        </footer>
+
+      </div>
+    </EdgeStoreProvider>
   );
 }
