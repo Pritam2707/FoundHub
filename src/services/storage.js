@@ -1,0 +1,59 @@
+import { INITIAL_CIVIC_ISSUES, INITIAL_LOST_FOUND } from '../data/mockData';
+
+const CIVIC_STORAGE_KEY = 'civicbloom_issues_v1';
+const LOST_FOUND_STORAGE_KEY = 'civicbloom_lostfound_v1';
+const USER_UPVOTES_KEY = 'civicbloom_user_upvotes_v1';
+
+export function getStoredCivicIssues() {
+  try {
+    const raw = localStorage.getItem(CIVIC_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(CIVIC_STORAGE_KEY, JSON.stringify(INITIAL_CIVIC_ISSUES));
+      return INITIAL_CIVIC_ISSUES;
+    }
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('Error reading civic issues from localStorage:', e);
+    return INITIAL_CIVIC_ISSUES;
+  }
+}
+
+export function saveCivicIssues(issues) {
+  try {
+    localStorage.setItem(CIVIC_STORAGE_KEY, JSON.stringify(issues));
+  } catch (e) {
+    console.error('Error saving civic issues:', e);
+  }
+}
+
+export function getStoredLostFound() {
+  try {
+    const raw = localStorage.getItem(LOST_FOUND_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(LOST_FOUND_STORAGE_KEY, JSON.stringify(INITIAL_LOST_FOUND));
+      return INITIAL_LOST_FOUND;
+    }
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('Error reading lost & found from localStorage:', e);
+    return INITIAL_LOST_FOUND;
+  }
+}
+
+export function saveLostFound(items) {
+  try {
+    localStorage.setItem(LOST_FOUND_STORAGE_KEY, JSON.stringify(items));
+  } catch (e) {
+    console.error('Error saving lost & found:', e);
+  }
+}
+
+export function resetAllToDefault() {
+  localStorage.setItem(CIVIC_STORAGE_KEY, JSON.stringify(INITIAL_CIVIC_ISSUES));
+  localStorage.setItem(LOST_FOUND_STORAGE_KEY, JSON.stringify(INITIAL_LOST_FOUND));
+  localStorage.removeItem(USER_UPVOTES_KEY);
+  return {
+    civicIssues: INITIAL_CIVIC_ISSUES,
+    lostFound: INITIAL_LOST_FOUND,
+  };
+}
