@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createEdgeStoreExpressHandler } from '@edgestore/server/adapters/express';
 import { edgeStoreRouter } from './src/services/edgestoreRouter.js';
@@ -42,16 +43,32 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve frontend static build in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'dist')));
+// Check if static dist folder exists to serve SPA
+const distPath = path.join(__dirname, 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+} else {
+  // If dist is not yet built, provide a helpful dev page
+  app.get('/', (req, res) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head><title>CivicBloom & FoundHub Backend</title><meta charset="utf-8"/></head>
+        <body style="font-family:system-ui;padding:40px;text-align:center;background:#0b0d13;color:#fff;">
+          <h2>🌸 CivicBloom Backend API Server (Port ${PORT})</h2>
+          <p style="color:#aaa;">Frontend Vite development server is running at: <a style="color:#6ee7b7;" href="http://localhost:3000">http://localhost:3000</a></p>
+          <p><a style="color:#38bdf8;" href="/api/health">Check API Health (/api/health)</a></p>
+        </body>
+      </html>
+    `);
   });
 }
 
 app.listen(PORT, () => {
-  console.log(`🌸 CivicBloom Node.js Backend Server running on http://localhost:${PORT}`);
+  console.log(`🌸 CivicBloom Backend Server running on http://localhost:${PORT}`);
 });
 
 export default app;

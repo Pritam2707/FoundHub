@@ -18,11 +18,10 @@ export default function LostFoundView({
   onSelectItem, 
   onOpenCreateModal 
 }) {
-  const [selectedType, setSelectedType] = useState('all'); // 'all', 'lost', 'found', 'reunited'
+  const [selectedType, setSelectedType] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filtered Items
   const filteredItems = useMemo(() => {
     let result = [...items];
 
@@ -53,7 +52,6 @@ export default function LostFoundView({
     return result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [items, selectedType, selectedCategory, searchQuery]);
 
-  // System Smart Matches
   const systemMatches = useMemo(() => {
     const matchesFound = [];
     const lostItems = items.filter(i => i.type === 'lost' && i.status !== 'reunited');
@@ -88,57 +86,70 @@ export default function LostFoundView({
   return (
     <div className="space-y-6 pb-16">
       
-      {/* Clean Minimal Header */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900">
-            Lost & Found Community Hub
-          </h1>
-          <p className="text-stone-500 text-xs sm:text-sm mt-0.5">
-            Auto-matches lost and found listings using categories, keywords, and location proximity.
+          <div className="flex items-center space-x-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
+              Campus Lost & Found Hub
+            </h1>
+            <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 px-2.5 py-0.5 rounded-full flex items-center space-x-1">
+              <Sparkles className="w-3 h-3 text-indigo-500" />
+              <span>AI Match Engine Active</span>
+            </span>
+          </div>
+          <p className="text-stone-500 dark:text-stone-400 text-xs sm:text-sm mt-0.5">
+            Auto-suggests matches between lost and found items at IIEST Shibpur.
           </p>
         </div>
 
         <div className="flex items-center space-x-2 shrink-0">
           <button
             onClick={() => onOpenCreateModal('lost')}
-            className="px-3.5 py-2 rounded-xl bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 transition-all flex items-center space-x-1.5 shadow-subtle"
+            className="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-subtle"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Post an Item</span>
+            <span>I Lost an Item</span>
+          </button>
+          <button
+            onClick={() => onOpenCreateModal('found')}
+            className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-subtle"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>I Found an Item</span>
           </button>
         </div>
       </div>
 
-      {/* Discreet Smart Match Suggestion Alert */}
+      {/* Smart Match Suggestion Alert */}
       {systemMatches.length > 0 && (
-        <div className="bg-indigo-50/70 border border-indigo-100 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-950/40 dark:via-purple-950/40 dark:to-pink-950/40 border border-indigo-200 dark:border-indigo-800/60 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-card">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-glow-indigo">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-bold text-indigo-950 block">
-                {systemMatches.length} Possible Match Pair Detected
+              <span className="font-bold text-indigo-950 dark:text-indigo-200 block text-sm">
+                {systemMatches.length} High-Confidence Match Suggested!
               </span>
-              <span className="text-indigo-700">
-                "{systemMatches[0].lostItem.title}" matches with "{systemMatches[0].foundItem.title}" ({systemMatches[0].score}% confidence)
+              <span className="text-indigo-800 dark:text-indigo-300">
+                "{systemMatches[0].lostItem.title}" correlates with "{systemMatches[0].foundItem.title}" ({systemMatches[0].score}% Match)
               </span>
             </div>
           </div>
 
           <button
             onClick={() => onSelectItem(systemMatches[0].lostItem)}
-            className="px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg font-semibold hover:bg-indigo-50 transition-all flex items-center space-x-1 shrink-0 self-start sm:self-center"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center space-x-1 shrink-0 self-start sm:self-center shadow-subtle"
           >
             <span>Review Match</span>
-            <ArrowRight className="w-3 h-3" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* Search & Filter Controls */}
-      <div className="bg-white p-3.5 rounded-2xl border border-stone-200/80 shadow-subtle space-y-3">
+      {/* Search & Filter Bar */}
+      <div className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-card dark:shadow-card-dark space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
           
           {/* Search Input */}
@@ -149,16 +160,18 @@ export default function LostFoundView({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by item name, color, brand, or location..."
-              className="w-full pl-9 pr-4 py-2 bg-stone-50/80 hover:bg-stone-50 focus:bg-white border border-stone-200/80 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-stone-900 transition-all placeholder:text-stone-400"
+              className="w-full pl-9 pr-4 py-2 bg-stone-50 dark:bg-stone-800/80 hover:bg-stone-100/50 dark:hover:bg-stone-800 focus:bg-white dark:focus:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs sm:text-sm text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-stone-400"
             />
           </div>
 
-          {/* Type Segmented Controller */}
-          <div className="flex items-center bg-stone-100 p-0.5 rounded-xl text-xs font-medium">
+          {/* Segmented Controller */}
+          <div className="flex items-center bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl text-xs font-medium border border-stone-200/60 dark:border-stone-700">
             <button
               onClick={() => setSelectedType('all')}
               className={`px-3 py-1 rounded-lg transition-all ${
-                selectedType === 'all' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
+                selectedType === 'all' 
+                  ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-subtle font-bold' 
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
               }`}
             >
               All
@@ -166,38 +179,44 @@ export default function LostFoundView({
             <button
               onClick={() => setSelectedType('lost')}
               className={`px-3 py-1 rounded-lg transition-all ${
-                selectedType === 'lost' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
+                selectedType === 'lost' 
+                  ? 'bg-pink-600 text-white shadow-subtle font-bold' 
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
               }`}
             >
-              Lost
+              Lost Items
             </button>
             <button
               onClick={() => setSelectedType('found')}
               className={`px-3 py-1 rounded-lg transition-all ${
-                selectedType === 'found' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
+                selectedType === 'found' 
+                  ? 'bg-sky-600 text-white shadow-subtle font-bold' 
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
               }`}
             >
-              Found
+              Found Items
             </button>
             <button
               onClick={() => setSelectedType('reunited')}
               className={`px-3 py-1 rounded-lg transition-all ${
-                selectedType === 'reunited' ? 'bg-white text-stone-900 shadow-subtle font-semibold' : 'text-stone-500 hover:text-stone-800'
+                selectedType === 'reunited' 
+                  ? 'bg-emerald-600 text-white shadow-subtle font-bold' 
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
               }`}
             >
-              Reunited
+              Reunited 🎉
             </button>
           </div>
         </div>
 
-        {/* Minimal Category Pills */}
+        {/* Category Pills */}
         <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all font-medium ${
+            className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all font-semibold ${
               selectedCategory === 'all'
-                ? 'bg-stone-900 text-white shadow-subtle'
-                : 'text-stone-600 hover:bg-stone-100'
+                ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900 shadow-subtle'
+                : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
             }`}
           >
             All Categories
@@ -209,13 +228,13 @@ export default function LostFoundView({
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all flex items-center space-x-1 font-medium ${
+                className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all flex items-center space-x-1.5 font-medium border ${
                   isSelected
-                    ? 'bg-stone-900 text-white shadow-subtle'
-                    : 'text-stone-600 hover:bg-stone-100'
+                    ? 'bg-indigo-600 border-indigo-600 text-white font-bold shadow-subtle'
+                    : 'bg-stone-50 dark:bg-stone-800/80 border-stone-200/80 dark:border-stone-700/80 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700'
                 }`}
               >
-                <Icon name={cat.icon} className="w-3 h-3 text-stone-400" />
+                <Icon name={cat.icon} className="w-3.5 h-3.5" />
                 <span>{cat.label}</span>
               </button>
             );
@@ -225,9 +244,9 @@ export default function LostFoundView({
 
       {/* Grid of Items */}
       {filteredItems.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-stone-200/80 p-12 text-center shadow-subtle">
-          <p className="text-sm font-semibold text-stone-800">No items found</p>
-          <p className="text-xs text-stone-400 mt-1">Try switching tabs or adjusting search keywords</p>
+        <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-12 text-center shadow-card">
+          <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">No items match your filter</p>
+          <p className="text-xs text-stone-400 mt-1">Try switching between Lost and Found tabs</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -243,79 +262,85 @@ export default function LostFoundView({
               <div
                 key={item.id}
                 onClick={() => onSelectItem(item)}
-                className="group bg-white rounded-2xl border border-stone-200/80 hover:border-stone-400/80 p-3.5 shadow-card hover:shadow-card-hover transition-all flex flex-col justify-between cursor-pointer"
+                className="group bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-stone-800 hover:border-pink-400 dark:hover:border-pink-600 p-4 shadow-card dark:shadow-card-dark hover:shadow-card-hover transition-all flex flex-col justify-between cursor-pointer"
               >
                 <div>
                   {/* Photo Container */}
-                  <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-stone-100 mb-3 border border-stone-100">
+                  <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 mb-3 border border-stone-200 dark:border-stone-800">
                     {item.imageUrl ? (
                       <img
                         src={item.imageUrl}
                         alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-stone-300">
-                        <Icon name={category.icon} className="w-8 h-8" />
+                      <div className="w-full h-full flex items-center justify-center text-stone-400">
+                        <Icon name={category.icon} className="w-8 h-8 opacity-40" />
                       </div>
                     )}
 
-                    {/* Minimal Type Badge */}
+                    {/* Type Badge */}
                     <div className="absolute top-2 left-2">
                       {isReunited ? (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-600 text-white shadow-subtle">
-                          REUNITED
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-600 text-white shadow-subtle">
+                          REUNITED 🎉
                         </span>
                       ) : isLost ? (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-600 text-white shadow-subtle">
-                          LOST
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-pink-600 text-white shadow-subtle">
+                          LOST ITEM
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-600 text-white shadow-subtle">
-                          FOUND
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-sky-600 text-white shadow-subtle">
+                          FOUND ITEM
                         </span>
                       )}
                     </div>
 
                     {/* Reward Badge */}
                     {item.reward && (
-                      <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-white/95 text-stone-800 shadow-subtle">
-                        {item.reward}
+                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-400 text-stone-900 shadow-subtle flex items-center space-x-1">
+                        <Award className="w-3 h-3" />
+                        <span>{item.reward}</span>
                       </div>
                     )}
 
-                    {/* Match notification tag */}
+                    {/* Match Tag */}
                     {topMatch && !isReunited && (
-                      <div className="absolute bottom-2 inset-x-2 bg-stone-900/90 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[10px] font-semibold text-center flex items-center justify-center space-x-1">
+                      <div className="absolute bottom-2 inset-x-2 bg-stone-950/90 backdrop-blur-sm text-white px-2 py-1 rounded-xl text-[10px] font-bold text-center flex items-center justify-center space-x-1 shadow-subtle">
                         <Sparkles className="w-3 h-3 text-amber-400" />
-                        <span>{topMatch.score}% Match Found</span>
+                        <span>✨ {topMatch.score}% Match Found</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Category & Title */}
-                  <div className="text-[11px] text-stone-400 font-medium mb-1">
+                  {/* Category & Attributes */}
+                  <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium mb-1">
                     {category.label} {item.color ? `• ${item.color}` : ''}
                   </div>
 
-                  <h3 className="font-semibold text-xs sm:text-sm text-stone-900 line-clamp-2 leading-snug group-hover:text-brand-primary transition-colors">
+                  {/* Title */}
+                  <h3 className="font-bold text-sm text-stone-900 dark:text-white line-clamp-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {item.title}
                   </h3>
 
-                  <p className="text-stone-500 text-xs mt-1 line-clamp-2 leading-relaxed">
+                  {/* Description */}
+                  <p className="text-stone-500 dark:text-stone-400 text-xs mt-1 line-clamp-2 leading-relaxed">
                     {item.description}
                   </p>
                 </div>
 
-                {/* Footer Meta */}
-                <div className="mt-3 pt-2.5 border-t border-stone-100 flex items-center justify-between text-xs text-stone-400">
+                {/* Footer */}
+                <div className="mt-3 pt-2.5 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
                   <div className="flex items-center space-x-1 truncate mr-2">
                     <MapPin className="w-3 h-3 text-stone-400 shrink-0" />
                     <span className="truncate">{item.locationName}</span>
                   </div>
 
-                  <span className="text-[11px] shrink-0">{timeAgo(item.timestamp)}</span>
+                  <div className="shrink-0 flex items-center space-x-1 text-[11px]">
+                    <Clock className="w-3 h-3" />
+                    <span>{timeAgo(item.timestamp)}</span>
+                  </div>
                 </div>
 
               </div>

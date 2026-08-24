@@ -24,13 +24,34 @@ import {
   saveLostFound,
   resetAllToDefault 
 } from './services/storage';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Sun, Moon } from 'lucide-react';
 
 export default function App() {
   const [viewMode, setViewMode] = useState('public'); // 'public' or 'admin'
   const [activeTab, setActiveTab] = useState('civic'); // 'civic', 'lostfound', 'map'
   const [civicIssues, setCivicIssues] = useState([]);
   const [lostFoundItems, setLostFoundItems] = useState([]);
+
+  // Theme Management (Light / Dark)
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('civicbloom_theme');
+    if (saved) return saved === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('civicbloom_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('civicbloom_theme', 'light');
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    setIsDark(!isDark);
+  };
 
   // Modals state
   const [selectedCivicIssue, setSelectedCivicIssue] = useState(null);
@@ -230,7 +251,7 @@ export default function App() {
 
   // Reset to default seed data
   const handleResetData = () => {
-    if (window.confirm('Reset all demo data to initial sample dataset?')) {
+    if (window.confirm('Reset all demo data to initial IIEST Shibpur sample dataset?')) {
       const reset = resetAllToDefault();
       setCivicIssues(reset.civicIssues);
       setLostFoundItems(reset.lostFound);
@@ -250,12 +271,12 @@ export default function App() {
 
   return (
     <EdgeStoreProvider>
-      <div className="min-h-screen bg-canvas text-stone-900 flex flex-col font-sans selection:bg-stone-200">
+      <div className="min-h-screen bg-stone-50 dark:bg-[#0B0D13] text-stone-900 dark:text-stone-100 flex flex-col font-sans transition-colors duration-200">
         
         {/* PUBLIC VIEW */}
         {viewMode === 'public' && (
           <>
-            {/* Minimal Navbar */}
+            {/* Navbar with Theme Toggle */}
             <Navbar
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -263,6 +284,8 @@ export default function App() {
               onOpenAdminPortal={() => setViewMode('admin')}
               civicCount={civicIssues.length}
               lostFoundCount={lostFoundItems.length}
+              isDark={isDark}
+              onToggleTheme={toggleTheme}
             />
 
             {/* Main App Container */}
@@ -290,35 +313,47 @@ export default function App() {
                 />
               )}
 
-              {/* Live Interactive Map */}
+              {/* Aerial Satellite Campus Map */}
               {activeTab === 'map' && (
                 <InteractiveMap
                   civicIssues={civicIssues}
                   lostFoundItems={lostFoundItems}
                   onSelectCivicIssue={(issue) => setSelectedCivicIssue(issue)}
                   onSelectLostFound={(item) => setSelectedLostFoundItem(item)}
+                  isDark={isDark}
                 />
               )}
 
             </main>
 
-            {/* Minimal Footer */}
-            <footer className="mt-auto border-t border-stone-200/60 bg-white py-6 px-4 text-xs text-stone-500">
+            {/* Footer */}
+            <footer className="mt-auto border-t border-stone-200/80 dark:border-stone-800/80 bg-white/80 dark:bg-stone-900/80 py-6 px-4 text-xs text-stone-500 dark:text-stone-400">
               <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center space-x-2">
-                  <span className="font-semibold text-stone-900">CivicBloom & FoundHub</span>
+                  <span className="font-bold text-stone-900 dark:text-white">CivicBloom & FoundHub</span>
                   <span>•</span>
-                  <span>Community Issue Pipeline</span>
+                  <span>IIEST Shibpur Community Portal</span>
                 </div>
 
                 <div className="flex items-center space-x-4">
                   <button
-                    onClick={() => setViewMode('admin')}
-                    className="hover:text-stone-900 font-medium flex items-center space-x-1"
+                    onClick={toggleTheme}
+                    className="hover:text-stone-900 dark:hover:text-white font-medium flex items-center space-x-1"
                   >
-                    <ShieldCheck className="w-3.5 h-3.5" />
+                    {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-indigo-500" />}
+                    <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                  </button>
+
+                  <span>•</span>
+
+                  <button
+                    onClick={() => setViewMode('admin')}
+                    className="hover:text-stone-900 dark:hover:text-white font-medium flex items-center space-x-1"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
                     <span>Facility Staff Portal</span>
                   </button>
+                  
                   <span>•</span>
                   <span>MIT License</span>
                 </div>

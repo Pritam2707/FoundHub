@@ -60,8 +60,8 @@ export default function LostFoundModal({
         lng: Number(lng),
       },
       imageUrl,
-      posterName: 'You',
-      posterContact: contactInfo.trim() || 'student@campus.edu',
+      posterName: 'IIEST Member',
+      posterContact: contactInfo.trim() || 'student@iiest.ac.in',
       secretQuestion: type === 'found' ? secretQuestion.trim() : undefined,
       reward: type === 'lost' && reward.trim() ? reward.trim() : undefined,
       timestamp: new Date().toISOString(),
@@ -73,20 +73,20 @@ export default function LostFoundModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in">
-      <div className="bg-white w-full max-w-xl rounded-3xl border border-stone-200 shadow-modal overflow-hidden animate-fade-in max-h-[85vh] flex flex-col">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+      <div className="bg-white dark:bg-stone-900 w-full max-w-xl rounded-3xl border border-stone-200 dark:border-stone-800 shadow-modal overflow-hidden animate-fade-in max-h-[85vh] flex flex-col">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-stone-900">
+            <h2 className="text-base font-bold text-stone-900 dark:text-white">
               {type === 'lost' ? 'Post a Lost Possession' : 'Log a Found Item'}
             </h2>
-            <p className="text-xs text-stone-400">Auto-matched with community listings</p>
+            <p className="text-xs text-stone-400">Auto-matched with IIEST community listings</p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full text-stone-400 hover:text-stone-800 hover:bg-stone-100 flex items-center justify-center transition-all"
+            className="w-8 h-8 rounded-full text-stone-400 hover:text-stone-800 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center justify-center transition-all"
           >
             <X className="w-4 h-4" />
           </button>
@@ -96,12 +96,12 @@ export default function LostFoundModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
           
           {/* Type Toggle */}
-          <div className="flex bg-stone-100 p-0.5 rounded-xl">
+          <div className="flex bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl border border-stone-200/60 dark:border-stone-700">
             <button
               type="button"
               onClick={() => setType('lost')}
-              className={`flex-1 py-1.5 rounded-lg font-semibold transition-all ${
-                type === 'lost' ? 'bg-white text-stone-900 shadow-subtle' : 'text-stone-500'
+              className={`flex-1 py-1.5 rounded-lg font-bold transition-all ${
+                type === 'lost' ? 'bg-pink-600 text-white shadow-subtle' : 'text-stone-600 dark:text-stone-400'
               }`}
             >
               I Lost Something
@@ -109,8 +109,8 @@ export default function LostFoundModal({
             <button
               type="button"
               onClick={() => setType('found')}
-              className={`flex-1 py-1.5 rounded-lg font-semibold transition-all ${
-                type === 'found' ? 'bg-white text-stone-900 shadow-subtle' : 'text-stone-500'
+              className={`flex-1 py-1.5 rounded-lg font-bold transition-all ${
+                type === 'found' ? 'bg-sky-600 text-white shadow-subtle' : 'text-stone-600 dark:text-stone-400'
               }`}
             >
               I Found Something
@@ -119,7 +119,7 @@ export default function LostFoundModal({
 
           {/* Category */}
           <div>
-            <label className="block font-semibold text-stone-700 mb-1">Category</label>
+            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">Category</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               {LOST_FOUND_CATEGORIES.map(cat => {
                 const isSelected = category === cat.id;
@@ -130,8 +130,8 @@ export default function LostFoundModal({
                     onClick={() => setCategory(cat.id)}
                     className={`p-2 rounded-xl border text-left flex items-center space-x-1.5 transition-all ${
                       isSelected
-                        ? 'bg-stone-900 border-stone-900 text-white font-semibold'
-                        : 'bg-stone-50 border-stone-200/80 text-stone-600 hover:bg-stone-100'
+                        ? 'bg-indigo-600 border-indigo-600 text-white font-bold shadow-subtle'
+                        : 'bg-stone-50 dark:bg-stone-800 border-stone-200/80 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100'
                     }`}
                   >
                     <Icon name={cat.icon} className="w-3.5 h-3.5 shrink-0" />
@@ -144,51 +144,51 @@ export default function LostFoundModal({
 
           {/* Title */}
           <div>
-            <label className="block font-semibold text-stone-700 mb-1">Item Title *</label>
+            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">Item Title *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Navy Blue HydroFlask with space stickers"
-              className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-stone-900"
+              placeholder="e.g. Navy Blue HydroFlask with stickers"
+              className="w-full px-3.5 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
           {/* Color & Brand */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block font-semibold text-stone-700 mb-1">Color</label>
+              <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">Color</label>
               <input
                 type="text"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
                 placeholder="e.g. Navy Blue"
-                className="w-full px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl"
+                className="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="block font-semibold text-stone-700 mb-1">Brand</label>
+              <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">Brand</label>
               <input
                 type="text"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
-                placeholder="e.g. Apple / Nike"
-                className="w-full px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl"
+                placeholder="e.g. Apple / HydroFlask"
+                className="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-white"
               />
             </div>
           </div>
 
           {/* Location */}
           <div>
-            <label className="block font-semibold text-stone-700 mb-1">
+            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
               {type === 'lost' ? 'Last Seen Location' : 'Found / Safekeeping Location'}
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <select
                 value={locationName}
                 onChange={(e) => handleLandmarkSelect(e.target.value)}
-                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none"
+                className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none"
               >
                 {CAMPUS_LANDMARKS.map(lm => (
                   <option key={lm.name} value={lm.name}>
@@ -202,33 +202,33 @@ export default function LostFoundModal({
                 value={locationName}
                 onChange={(e) => setLocationName(e.target.value)}
                 placeholder="Specific spot notes..."
-                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none"
+                className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none"
               />
             </div>
           </div>
 
           {/* Description */}
           <div>
-            <label className="block font-semibold text-stone-700 mb-1">Distinctive Markings</label>
+            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">Distinctive Markings</label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe scratches, stickers, contents..."
-              className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-stone-900"
+              className="w-full px-3.5 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
-          {/* Secret question for found */}
+          {/* Secret question */}
           {type === 'found' && (
-            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 space-y-1">
-              <label className="font-semibold text-stone-800 block">Secret Ownership Question</label>
+            <div className="p-3 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 space-y-1">
+              <label className="font-bold text-stone-800 dark:text-stone-200 block">Secret Ownership Question</label>
               <input
                 type="text"
                 value={secretQuestion}
                 onChange={(e) => setSecretQuestion(e.target.value)}
                 placeholder="e.g. What specific sticker is on the back?"
-                className="w-full px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs"
+                className="w-full px-3 py-1.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg text-xs text-stone-900 dark:text-white"
               />
             </div>
           )}
@@ -236,24 +236,24 @@ export default function LostFoundModal({
           {/* Contact / Reward */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block font-semibold text-stone-700 mb-1">Your Email</label>
+              <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">Your Email</label>
               <input
                 type="text"
                 value={contactInfo}
                 onChange={(e) => setContactInfo(e.target.value)}
-                placeholder="contact@campus.edu"
-                className="w-full px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl"
+                placeholder="you@iiest.ac.in"
+                className="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-white"
               />
             </div>
             {type === 'lost' && (
               <div>
-                <label className="block font-semibold text-stone-700 mb-1">Reward (Optional)</label>
+                <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">Reward (Optional)</label>
                 <input
                   type="text"
                   value={reward}
                   onChange={(e) => setReward(e.target.value)}
-                  placeholder="e.g. $20 / Coffee"
-                  className="w-full px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl"
+                  placeholder="e.g. Canteen Coffee / $15"
+                  className="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-white"
                 />
               </div>
             )}
@@ -261,7 +261,7 @@ export default function LostFoundModal({
 
           {/* Photo */}
           <div>
-            <label className="block font-semibold text-stone-700 mb-1.5">Photo</label>
+            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1.5">Photo</label>
             <EdgeStoreUploader
               initialUrl={imageUrl}
               onUploadComplete={(url) => setImageUrl(url)}
@@ -269,17 +269,19 @@ export default function LostFoundModal({
           </div>
 
           {/* Submit */}
-          <div className="pt-3 border-t border-stone-100 flex justify-end gap-2">
+          <div className="pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2 rounded-xl text-stone-600 hover:bg-stone-100 font-semibold"
+              className="px-3.5 py-2 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-stone-900 text-white rounded-xl font-semibold hover:bg-stone-800 shadow-subtle"
+              className={`px-5 py-2 text-white rounded-xl font-bold transition-all shadow-subtle ${
+                type === 'lost' ? 'bg-pink-600 hover:bg-pink-700' : 'bg-sky-600 hover:bg-sky-700'
+              }`}
             >
               {type === 'lost' ? 'Post Lost Item' : 'Post Found Item'}
             </button>
