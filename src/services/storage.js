@@ -49,11 +49,12 @@ export function saveLostFound(items) {
 }
 
 export function resetAllToDefault() {
-  localStorage.setItem(CIVIC_STORAGE_KEY, JSON.stringify(INITIAL_CIVIC_ISSUES));
-  localStorage.setItem(LOST_FOUND_STORAGE_KEY, JSON.stringify(INITIAL_LOST_FOUND));
+  localStorage.setItem(CIVIC_STORAGE_KEY, JSON.stringify([]));
+  localStorage.setItem(LOST_FOUND_STORAGE_KEY, JSON.stringify([]));
   localStorage.removeItem(USER_UPVOTES_KEY);
   return {
-    civicIssues: INITIAL_CIVIC_ISSUES,
-    lostFound: INITIAL_LOST_FOUND,
+    civicIssues: [],
+    lostFound: [],
   };
 }
+
