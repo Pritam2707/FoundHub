@@ -105,20 +105,211 @@ export const LOST_FOUND_CATEGORIES = [
   { id: 'other', label: 'Other Items', icon: 'Package', color: 'purple' },
 ];
 
-// IIEST Shibpur Campus Landmarks & Coordinates
-export const CAMPUS_LANDMARKS = [
-  { name: 'Main Academic Building & Clock Tower', lat: 22.5558, lng: 88.3075, area: 'Administrative Core' },
-  { name: '8-Storied Building (Science & Tech)', lat: 22.5545, lng: 88.3082, area: 'Academic Block' },
-  { name: 'Ramanujan Central Library', lat: 22.5550, lng: 88.3070, area: 'Academic Core' },
-  { name: 'Netaji Bhavan', lat: 22.5562, lng: 88.3060, area: 'North Academic Wing' },
-  { name: 'Oval Ground', lat: 22.5540, lng: 88.3055, area: 'Sports & Recreation' },
-  { name: 'Lords Ground', lat: 22.5570, lng: 88.3085, area: 'Athletics Ground' },
-  { name: 'Student Activity Centre (SAC) & Gym', lat: 22.5535, lng: 88.3068, area: 'Student Center' },
-  { name: 'Wolfenden Hall / Macdonald Hall', lat: 22.5565, lng: 88.3048, area: 'Hostel Zone' },
-  { name: 'First Gate (Main Entrance)', lat: 22.5578, lng: 88.3090, area: 'Campus Gate' },
-  { name: 'Health Centre & Hospital', lat: 22.5548, lng: 88.3040, area: 'Medical Unit' },
-  { name: 'Institute Canteen & Nescafe', lat: 22.5555, lng: 88.3062, area: 'Dining & Plaza' },
+// IIEST Shibpur Campus Buildings, Polygons, and Overlays (like maps.iiest.wiki)
+export const IIEST_CAMPUS_BUILDINGS = [
+  {
+    id: 'main_building',
+    name: 'Main Academic Building & Clock Tower',
+    shortName: 'Clock Tower & Admin',
+    code: 'MB',
+    color: '#818CF8', // Indigo
+    strokeColor: '#4F46E5',
+    center: [22.5558, 88.3075],
+    polygon: [
+      [22.5562, 22.5562 > 0 ? 88.3071 : 0],
+      [22.5562, 88.3079],
+      [22.5554, 88.3079],
+      [22.5554, 88.3071],
+    ],
+    polygonExact: [
+      [22.55625, 88.30712],
+      [22.55625, 88.30792],
+      [22.55535, 88.30792],
+      [22.55535, 88.30712],
+    ],
+    category: 'Academic & Administration',
+    description: 'Main Administrative Wing, Director Office, Registrar, Clock Tower & Deans Office'
+  },
+  {
+    id: 'eight_storied',
+    name: '8-Storied Building (Science & Tech)',
+    shortName: '8-Storied Science Wing',
+    code: '8SB',
+    color: '#38BDF8', // Sky
+    strokeColor: '#0284C7',
+    center: [22.5545, 88.3082],
+    polygonExact: [
+      [22.55485, 88.30785],
+      [22.55485, 88.30855],
+      [22.55415, 88.30855],
+      [22.55415, 88.30785],
+    ],
+    category: 'Departmental Labs',
+    description: 'Computer Science, Information Tech, Electronics & Telecommunication Labs'
+  },
+  {
+    id: 'library',
+    name: 'Ramanujan Central Library',
+    shortName: 'Central Library',
+    code: 'LIB',
+    color: '#FBBF24', // Amber
+    strokeColor: '#D97706',
+    center: [22.5550, 88.3070],
+    polygonExact: [
+      [22.55530, 88.30670],
+      [22.55530, 88.30730],
+      [22.55470, 88.30730],
+      [22.55470, 88.30670],
+    ],
+    category: 'Academic Core',
+    description: 'Central Library, Digital Reading Wing & Research Archives'
+  },
+  {
+    id: 'netaji_bhavan',
+    name: 'Netaji Bhavan',
+    shortName: 'Netaji Bhavan',
+    code: 'NB',
+    color: '#34D399', // Emerald
+    strokeColor: '#059669',
+    center: [22.5562, 88.3060],
+    polygonExact: [
+      [22.55655, 88.30565],
+      [22.55655, 88.30635],
+      [22.55585, 88.30635],
+      [22.55585, 88.30565],
+    ],
+    category: 'Departments',
+    description: 'Civil Engineering, Metallurgy & Materials Engineering'
+  },
+  {
+    id: 'oval_ground',
+    name: 'Oval Ground',
+    shortName: 'Oval Ground',
+    code: 'OG',
+    color: '#10B981', // Green
+    strokeColor: '#047857',
+    center: [22.5540, 88.3055],
+    polygonExact: [
+      [22.55460, 88.30495],
+      [22.55460, 88.30605],
+      [22.55340, 88.30605],
+      [22.55340, 88.30495],
+    ],
+    category: 'Sports & Green',
+    description: 'Cricket, Open Air Fest Grounds & Campus Green'
+  },
+  {
+    id: 'lords_ground',
+    name: 'Lords Ground',
+    shortName: 'Lords Ground',
+    code: 'LG',
+    color: '#84CC16', // Lime
+    strokeColor: '#4D7C0F',
+    center: [22.5570, 88.3085],
+    polygonExact: [
+      [22.55760, 88.30800],
+      [22.55760, 88.30900],
+      [22.55640, 88.30900],
+      [22.55640, 88.30800],
+    ],
+    category: 'Athletics',
+    description: 'Football & Track Athletics Stadium'
+  },
+  {
+    id: 'sac_gym',
+    name: 'Student Activity Centre (SAC) & Gym',
+    shortName: 'SAC & Gymnasium',
+    code: 'SAC',
+    color: '#F43F5E', // Rose
+    strokeColor: '#BE123C',
+    center: [22.5535, 88.3068],
+    polygonExact: [
+      [22.55380, 88.30645],
+      [22.55380, 88.30715],
+      [22.55320, 88.30715],
+      [22.55320, 88.30645],
+    ],
+    category: 'Student Hub',
+    description: 'Indoor Badminton, Gym, Clubs & Student Societies'
+  },
+  {
+    id: 'wolfenden_macdonald',
+    name: 'Wolfenden Hall & Macdonald Hall',
+    shortName: 'Hostel Zone',
+    code: 'WH',
+    color: '#A855F7', // Purple
+    strokeColor: '#7E22CE',
+    center: [22.5565, 88.3048],
+    polygonExact: [
+      [22.55690, 88.30440],
+      [22.55690, 88.30520],
+      [22.55610, 88.30520],
+      [22.55610, 88.30440],
+    ],
+    category: 'Hostel',
+    description: 'Undergraduate & Postgraduate Student Residences'
+  },
+  {
+    id: 'first_gate',
+    name: 'First Gate (Main Entrance)',
+    shortName: 'First Gate Security',
+    code: 'GATE-1',
+    color: '#FB923C', // Orange
+    strokeColor: '#C2410C',
+    center: [22.5578, 88.3090],
+    polygonExact: [
+      [22.55800, 88.30875],
+      [22.55800, 88.30925],
+      [22.55760, 88.30925],
+      [22.55760, 88.30875],
+    ],
+    category: 'Campus Entry',
+    description: 'Main Campus Security, Visitor Check & Bus Stop'
+  },
+  {
+    id: 'health_centre',
+    name: 'Hospital & Health Centre',
+    shortName: 'Health Centre',
+    code: 'HC',
+    color: '#F43F5E', // Red
+    strokeColor: '#9F1239',
+    center: [22.5548, 88.3040],
+    polygonExact: [
+      [22.55510, 88.30370],
+      [22.55510, 88.30430],
+      [22.55450, 88.30430],
+      [22.55450, 88.30370],
+    ],
+    category: 'Medical',
+    description: '24/7 Campus Medical Dispensary & Ambulance Unit'
+  },
+  {
+    id: 'canteen_nescafe',
+    name: 'Institute Canteen & Nescafe',
+    shortName: 'Canteen & Food Court',
+    code: 'IC',
+    color: '#FBBF24', // Amber
+    strokeColor: '#B45309',
+    center: [22.5555, 88.3062],
+    polygonExact: [
+      [22.55575, 88.30595],
+      [22.55575, 88.30645],
+      [22.55525, 88.30645],
+      [22.55525, 88.30595],
+    ],
+    category: 'Food & Dining',
+    description: 'Central Cafeteria, Nescafe Kiosk & Evening Plaza'
+  },
 ];
+
+// Campus Landmarks List for quick selection
+export const CAMPUS_LANDMARKS = IIEST_CAMPUS_BUILDINGS.map(b => ({
+  name: b.name,
+  lat: b.center[0],
+  lng: b.center[1],
+  area: b.category,
+  shortName: b.shortName,
+}));
 
 export const IIEST_MAP_CENTER = [22.5552, 88.3065];
 export const IIEST_MAP_ZOOM = 17;

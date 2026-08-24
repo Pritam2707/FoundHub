@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
   MapPin, 
@@ -9,12 +9,33 @@ import {
   Layers,
   Compass,
   Satellite,
-  Globe2,
-  Sparkles
+  Building2,
+  Tag
 } from 'lucide-react';
-import { CAMPUS_LANDMARKS, IIEST_MAP_CENTER, IIEST_MAP_ZOOM, IIEST_WIKI_MAP_URL } from '../types';
+import { 
+  CAMPUS_LANDMARKS, 
+  IIEST_CAMPUS_BUILDINGS, 
+  IIEST_MAP_CENTER, 
+  IIEST_MAP_ZOOM, 
+  IIEST_WIKI_MAP_URL 
+} from '../types';
 
-// Custom High-Contrast Satellite Markers with glowing halos
+// Custom Building Floating Label Tag Icon
+function createBuildingLabelIcon(name, code, color) {
+  return L.divIcon({
+    className: 'custom-building-label',
+    html: `
+      <div style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); border: 1.5px solid ${color}; color: #FFFFFF; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 4px; pointer-events: none;">
+        <span style="background: ${color}; width: 6px; height: 6px; border-radius: 50%;"></span>
+        <span>${name}</span>
+      </div>
+    `,
+    iconSize: [120, 24],
+    iconAnchor: [60, 12],
+  });
+}
+
+// Custom High-Contrast Satellite Markers
 function createSatelliteCivicIcon(category, isResolved, urgency) {
   const isUrgent = urgency >= 30;
   const bg = isResolved 
@@ -88,6 +109,7 @@ export default function InteractiveMap({
   isDark
 }) {
   const [mapMode, setMapMode] = useState('satellite'); // 'satellite', 'vector', 'iiest_wiki'
+  const [showBuildings, setShowBuildings] = useState(true);
   const [showCivic, setShowCivic] = useState(true);
   const [showLost, setShowLost] = useState(true);
   const [showFound, setShowFound] = useState(true);
@@ -105,11 +127,11 @@ export default function InteractiveMap({
             </h1>
             <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-md flex items-center space-x-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Satellite Pins Live</span>
+              <span>Aerial Overlays Active</span>
             </span>
           </div>
           <p className="text-stone-500 dark:text-stone-400 text-xs sm:text-sm mt-0.5">
-            High-resolution aerial satellite view of IIEST Shibpur with geotagged pothole reports, hazards, and lost items.
+            High-res satellite view with labeled IIEST Shibpur buildings & geotagged reports.
           </p>
         </div>
 
@@ -167,10 +189,24 @@ export default function InteractiveMap({
 
       {mapMode !== 'iiest_wiki' ? (
         <>
-          {/* Controls: Category Toggles & Landmark Jump Shortcuts */}
+          {/* Controls: Building Overlays & Category Toggles */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             {/* Layer Filter Toggles */}
             <div className="flex items-center gap-1.5 flex-wrap text-xs">
+              
+              {/* Building Overlay Switcher */}
+              <button
+                onClick={() => setShowBuildings(!showBuildings)}
+                className={`px-3 py-1.5 rounded-xl font-bold border transition-all flex items-center space-x-1.5 ${
+                  showBuildings
+                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-glow-indigo'
+                    : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Building Labels ({IIEST_CAMPUS_BUILDINGS.length})</span>
+              </button>
+
               <button
                 onClick={() => setShowCivic(!showCivic)}
                 className={`px-3 py-1.5 rounded-xl font-semibold border transition-all flex items-center space-x-1.5 ${
@@ -190,7 +226,7 @@ export default function InteractiveMap({
                     : 'bg-white dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700'
                 }`}
               >
-                <span>🔍 Lost Items ({lostFoundItems.filter(i => i.type === 'lost').length})</span>
+                <span>🔍 Lost ({lostFoundItems.filter(i => i.type === 'lost').length})</span>
               </button>
 
               <button
@@ -201,27 +237,27 @@ export default function InteractiveMap({
                     : 'bg-white dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700'
                 }`}
               >
-                <span>📦 Found Items ({lostFoundItems.filter(i => i.type === 'found').length})</span>
+                <span>📦 Found ({lostFoundItems.filter(i => i.type === 'found').length})</span>
               </button>
             </div>
 
             {/* Landmark Quick Jump Pills */}
             <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
               <span className="text-stone-400 font-semibold text-[11px] shrink-0">Fly to:</span>
-              {CAMPUS_LANDMARKS.slice(0, 6).map((lm) => (
+              {IIEST_CAMPUS_BUILDINGS.slice(0, 6).map((b) => (
                 <button
-                  key={lm.name}
-                  onClick={() => setFlyCoords([lm.lat, lm.lng])}
+                  key={b.id}
+                  onClick={() => setFlyCoords(b.center)}
                   className="whitespace-nowrap px-2.5 py-1 rounded-xl bg-white/90 dark:bg-stone-800/90 hover:bg-white dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-all flex items-center space-x-1 shadow-subtle"
                 >
                   <Navigation className="w-2.5 h-2.5 text-stone-400" />
-                  <span>{lm.name.split('(')[0].trim()}</span>
+                  <span>{b.shortName}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Leaflet Satellite Map Container */}
+          {/* Leaflet Satellite Map Container with Building Overlays */}
           <div className="w-full h-[580px] rounded-3xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-card-dark relative">
             <MapContainer
               center={IIEST_MAP_CENTER}
@@ -259,6 +295,43 @@ export default function InteractiveMap({
               )}
 
               <MapFlyTo targetCoords={flyCoords} />
+
+              {/* CUSTOM IIEST BUILDING POLYGONS & FLOATING LABELS */}
+              {showBuildings && IIEST_CAMPUS_BUILDINGS.map((building) => {
+                const labelIcon = createBuildingLabelIcon(building.shortName, building.code, building.color);
+
+                return (
+                  <React.Fragment key={building.id}>
+                    {/* Building Area Boundary */}
+                    <Polygon
+                      positions={building.polygonExact}
+                      pathOptions={{
+                        color: building.strokeColor,
+                        fillColor: building.color,
+                        fillOpacity: 0.28,
+                        weight: 2,
+                        dashArray: '4, 4',
+                      }}
+                    >
+                      <Popup>
+                        <div className="p-2 text-stone-900 dark:text-white text-xs font-sans space-y-1">
+                          <span className="font-bold text-[10px] uppercase text-indigo-600 dark:text-indigo-400">
+                            {building.category}
+                          </span>
+                          <h4 className="font-bold text-sm leading-tight">{building.name}</h4>
+                          <p className="text-stone-500 dark:text-stone-400 text-xs">{building.description}</p>
+                        </div>
+                      </Popup>
+                    </Polygon>
+
+                    {/* Floating Label Badge */}
+                    <Marker
+                      position={building.center}
+                      icon={labelIcon}
+                    />
+                  </React.Fragment>
+                );
+              })}
 
               {/* Civic Issue Pins */}
               {showCivic && civicIssues.map((issue) => {
