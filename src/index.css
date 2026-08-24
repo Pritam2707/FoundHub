@@ -3,11 +3,18 @@
 @tailwind utilities;
 
 @layer base {
-  body {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
     background-color: #FAFAF9;
     color: #18181B;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     letter-spacing: -0.01em;
+  }
+
+  img, video, iframe, canvas, svg {
+    max-width: 100%;
+    height: auto;
   }
 }
 
@@ -35,6 +42,7 @@
   font-family: inherit;
   border-radius: 1rem;
   z-index: 10;
+  max-width: 100%;
 }
 
 .leaflet-popup-content-wrapper {
@@ -44,6 +52,7 @@
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: transparent !important;
+  max-width: 90vw !important;
 }
 
 .leaflet-popup-content {

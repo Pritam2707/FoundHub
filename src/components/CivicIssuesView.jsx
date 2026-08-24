@@ -283,7 +283,7 @@ export default function CivicIssuesView({
                   {/* Title & Media */}
                   <div className="flex gap-3.5">
                     {issue.imageUrl && (
-                      <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 shrink-0 border border-stone-200 dark:border-stone-800">
+                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 shrink-0 border border-stone-200 dark:border-stone-800 max-w-[80px] max-h-[80px]">
                         <img
                           src={issue.imageUrl}
                           alt={issue.title}
