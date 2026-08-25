@@ -21,7 +21,8 @@ export default function LostFoundModal({
   isOpen, 
   onClose, 
   onSubmit, 
-  initialType = 'lost' 
+  initialType = 'lost',
+  currentUser
 }) {
   const defaultPlace = CAMPUS_LANDMARKS[0] || { name: 'Meditation Center & Clock Tower', lat: 22.556244, lng: 88.305552 };
 
@@ -121,8 +122,10 @@ export default function LostFoundModal({
         lng: finalLng,
       },
       imageUrl: imageUrl.trim() || undefined,
-      posterName: 'IIEST Member',
-      posterContact: contactInfo.trim() || 'student@iiest.ac.in',
+      posterId: currentUser?.uid || 'guest',
+      posterName: currentUser?.displayName || 'IIEST Member',
+      posterAvatar: currentUser?.photoURL,
+      posterContact: contactInfo.trim() || currentUser?.email || 'student@iiest.ac.in',
       secretQuestion: type === 'found' ? secretQuestion.trim() : undefined,
       reward: type === 'lost' && reward.trim() ? reward.trim() : undefined,
       timestamp: new Date().toISOString(),

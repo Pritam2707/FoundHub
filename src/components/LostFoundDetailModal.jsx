@@ -25,7 +25,8 @@ export default function LostFoundDetailModal({
   onClose, 
   onMarkReunited, 
   onAddComment,
-  onSelectItem
+  onSelectItem,
+  currentUser
 }) {
   const [commentText, setCommentText] = useState('');
   const [claimAnswer, setClaimAnswer] = useState('');
@@ -55,8 +56,9 @@ export default function LostFoundDetailModal({
 
     const newComment = {
       id: `lfc-${Date.now()}`,
-      author: 'IIEST Sighting Tip',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+      author: currentUser?.displayName || 'IIEST Community Member',
+      avatar: currentUser?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+      authorId: currentUser?.uid,
       text: commentText.trim(),
       timestamp: new Date().toISOString(),
     };
@@ -72,10 +74,14 @@ export default function LostFoundDetailModal({
 
     const claimNote = {
       id: `lfc-${Date.now()}`,
-      author: 'Claim Request',
-      text: `Ownership claim submitted by ${claimContact || 'claimant'}. Verification answer sent to poster.`,
+      author: `Claim by ${currentUser?.displayName || 'Claimant'}`,
+      avatar: currentUser?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+      authorId: currentUser?.uid,
+      text: `🔐 Ownership Verification Answer: "${claimAnswer.trim()}". Contact: ${claimContact.trim() || currentUser?.email}`,
       timestamp: new Date().toISOString(),
+      isClaim: true,
     };
+
     onAddComment(item.id, claimNote);
   };
 

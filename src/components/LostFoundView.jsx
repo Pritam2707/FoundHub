@@ -16,14 +16,20 @@ import Icon from './Icon';
 export default function LostFoundView({
   items,
   onSelectItem,
-  onOpenCreateModal
+  onOpenCreateModal,
+  currentUser
 }) {
   const [selectedType, setSelectedType] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [onlyMyPosts, setOnlyMyPosts] = useState(false);
 
   const filteredItems = useMemo(() => {
     let result = [...items];
+
+    if (onlyMyPosts && currentUser) {
+      result = result.filter(item => item.posterId === currentUser.uid);
+    }
 
     if (selectedType === 'lost') {
       result = result.filter(item => item.type === 'lost' && item.status !== 'reunited');
@@ -50,7 +56,7 @@ export default function LostFoundView({
     }
 
     return result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [items, selectedType, selectedCategory, searchQuery]);
+  }, [items, selectedType, selectedCategory, searchQuery, onlyMyPosts, currentUser]);
 
   const systemMatches = useMemo(() => {
     const matchesFound = [];
@@ -164,44 +170,60 @@ export default function LostFoundView({
             />
           </div>
 
-          {/* Segmented Controller */}
-          <div className="flex items-center bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl text-xs font-medium border border-stone-200/60 dark:border-stone-700">
-            <button
-              onClick={() => setSelectedType('all')}
-              className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'all'
-                ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-subtle font-bold'
-                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+          {/* Segmented Controller & My Posts */}
+          <div className="flex items-center space-x-2 flex-wrap gap-y-2">
+            <div className="flex items-center bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl text-xs font-medium border border-stone-200/60 dark:border-stone-700">
+              <button
+                onClick={() => setSelectedType('all')}
+                className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'all'
+                  ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-subtle font-bold'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setSelectedType('lost')}
+                className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'lost'
+                  ? 'bg-pink-600 text-white shadow-subtle font-bold'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+              >
+                Lost
+              </button>
+              <button
+                onClick={() => setSelectedType('found')}
+                className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'found'
+                  ? 'bg-sky-600 text-white shadow-subtle font-bold'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+              >
+                Found
+              </button>
+              <button
+                onClick={() => setSelectedType('reunited')}
+                className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'reunited'
+                  ? 'bg-emerald-600 text-white shadow-subtle font-bold'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+              >
+                Reunited
+              </button>
+            </div>
+
+            {currentUser && (
+              <button
+                type="button"
+                onClick={() => setOnlyMyPosts(!onlyMyPosts)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                  onlyMyPosts
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-subtle'
+                    : 'bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:bg-stone-100'
                 }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setSelectedType('lost')}
-              className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'lost'
-                ? 'bg-pink-600 text-white shadow-subtle font-bold'
-                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-                }`}
-            >
-              Lost Items
-            </button>
-            <button
-              onClick={() => setSelectedType('found')}
-              className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'found'
-                ? 'bg-sky-600 text-white shadow-subtle font-bold'
-                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-                }`}
-            >
-              Found Items
-            </button>
-            <button
-              onClick={() => setSelectedType('reunited')}
-              className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'reunited'
-                ? 'bg-emerald-600 text-white shadow-subtle font-bold'
-                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-                }`}
-            >
-              Reunited 🎉
-            </button>
+              >
+                <span>My Posts</span>
+              </button>
+            )}
           </div>
         </div>
 

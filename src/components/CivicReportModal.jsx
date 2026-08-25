@@ -33,7 +33,8 @@ export default function CivicReportModal({
   onClose, 
   onSubmit, 
   existingIssues,
-  onUpvoteAndClose
+  onUpvoteAndClose,
+  currentUser
 }) {
   const defaultPlace = CAMPUS_LANDMARKS[0] || { name: 'Meditation Center & Clock Tower', lat: 22.556244, lng: 88.305552 };
   
@@ -131,6 +132,7 @@ export default function CivicReportModal({
       category,
       severity: Number(severity),
       status: 'reported',
+      upvotedBy: currentUser ? [currentUser.uid] : [`user-guest-${Date.now()}`],
       urgencyUpvotes: 1,
       userUpvoted: true,
       verifiedCount: 1,
@@ -140,14 +142,17 @@ export default function CivicReportModal({
         lng: finalLng,
       },
       imageUrl: imageUrl.trim() || undefined,
-      reporterName: 'IIEST Community',
-      reporterRole: 'Resident',
+      reporterId: currentUser?.uid || 'guest',
+      reporterName: currentUser?.displayName || 'IIEST Member',
+      reporterAvatar: currentUser?.photoURL,
+      reporterEmail: currentUser?.email,
+      reporterRole: currentUser ? 'Verified Student / Staff' : 'Campus Member',
       reportedAt: new Date().toISOString(),
       statusHistory: [
         {
           status: 'reported',
           timestamp: new Date().toISOString(),
-          note: 'Issue submitted via CivicBloom with campus-bound geotag',
+          note: `Issue reported by ${currentUser?.displayName || 'IIEST Member'} with campus-bound geotag`,
         }
       ],
       comments: []

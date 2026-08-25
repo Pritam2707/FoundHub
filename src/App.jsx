@@ -8,6 +8,7 @@ import LostFoundModal from './components/LostFoundModal';
 import LostFoundDetailModal from './components/LostFoundDetailModal';
 import InteractiveMap from './components/InteractiveMap';
 import AdminPortal from './components/AdminPortal';
+import AuthModal from './components/AuthModal';
 import PWAInstallBanner from './components/PWAInstallBanner';
 import { EdgeStoreProvider } from './services/edgestore';
 import { 
@@ -15,6 +16,9 @@ import {
   subscribeToLostFound, 
   syncCivicIssue, 
   syncLostFoundItem,
+  subscribeToAuth,
+  signInWithGoogle,
+  signOutUser,
   isFirebaseConfigured
 } from './services/firebase';
 import { 
@@ -31,6 +35,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('civic'); // 'civic', 'lostfound', 'map'
   const [civicIssues, setCivicIssues] = useState([]);
   const [lostFoundItems, setLostFoundItems] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authPromptReason, setAuthPromptReason] = useState('');
 
   // Theme Management (Dark Mode by default, user-controlled toggle)
   const [isDark, setIsDark] = useState(() => {
@@ -60,6 +67,16 @@ export default function App() {
   const [isLostFoundModalOpen, setIsLostFoundModalOpen] = useState(false);
   const [lostFoundModalType, setLostFoundModalType] = useState('lost');
 
+  // Real-time Auth State Subscription
+  useEffect(() => {
+    const unsubAuth = subscribeToAuth((user) => {
+      setCurrentUser(user);
+    });
+    return () => {
+      if (typeof unsubAuth === 'function') unsubAuth();
+    };
+  }, []);
+
   // Real-time Firestore & Local Persistence Subscriptions
   useEffect(() => {
     const unsubCivic = subscribeToCivicIssues((issues) => {
@@ -86,21 +103,56 @@ export default function App() {
     saveLostFound(newItems);
   };
 
-  // Upvote Civic Issue
-  const handleUpvoteCivicIssue = (issueId) => {
+  // Google Authentication Trigger
+  const handleGoogleSignIn = async () => {
+    try {
+      const user = await signInWithGoogle();
+      setCurrentUser(user);
+    } catch (err) {
+      console.error('Sign-in failed:', err);
+    }
+  };
+
+  const handleGoogleSignOut = async () => {
+    await signOutUser();
+    setCurrentUser(null);
+  };
+
+  // Unique User Multi-Upvote Civic Issue
+  const handleUpvoteCivicIssue = async (issueId) => {
+    // If not signed in, prompt Google Sign-In
+    if (!currentUser) {
+      setAuthPromptReason('Sign in with Google to cast your unique verified upvote on this hazard.');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     const updated = civicIssues.map((issue) => {
       if (issue.id === issueId) {
-        const isUpvoted = issue.userUpvoted;
+        const currentUpvotedBy = Array.isArray(issue.upvotedBy) ? issue.upvotedBy : [];
+        const isUpvoted = currentUpvotedBy.includes(currentUser.uid);
+        
+        let newUpvotedBy;
+        if (isUpvoted) {
+          // Toggle off (remove user's unique vote)
+          newUpvotedBy = currentUpvotedBy.filter(uid => uid !== currentUser.uid);
+        } else {
+          // Toggle on (add user's unique vote)
+          newUpvotedBy = [...currentUpvotedBy, currentUser.uid];
+        }
+
         const modified = {
           ...issue,
+          upvotedBy: newUpvotedBy,
+          urgencyUpvotes: newUpvotedBy.length,
           userUpvoted: !isUpvoted,
-          urgencyUpvotes: isUpvoted ? Math.max(0, issue.urgencyUpvotes - 1) : issue.urgencyUpvotes + 1,
         };
         syncCivicIssue(modified);
         return modified;
       }
       return issue;
     });
+
     updateAndSaveCivicIssues(updated);
 
     if (selectedCivicIssue?.id === issueId) {
@@ -276,7 +328,7 @@ export default function App() {
         {/* PUBLIC VIEW */}
         {viewMode === 'public' && (
           <>
-            {/* Navbar with Theme Toggle */}
+            {/* Navbar with Theme Toggle & Google Auth */}
             <Navbar
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -286,6 +338,12 @@ export default function App() {
               lostFoundCount={lostFoundItems.length}
               isDark={isDark}
               onToggleTheme={toggleTheme}
+              user={currentUser}
+              onSignIn={() => {
+                setAuthPromptReason('');
+                setIsAuthModalOpen(true);
+              }}
+              onSignOut={handleGoogleSignOut}
             />
 
             {/* Main App Container */}
@@ -298,6 +356,11 @@ export default function App() {
                   onSelectIssue={(issue) => setSelectedCivicIssue(issue)}
                   onUpvoteIssue={handleUpvoteCivicIssue}
                   onOpenReportModal={() => setIsCivicModalOpen(true)}
+                  currentUser={currentUser}
+                  onRequireAuth={() => {
+                    setAuthPromptReason('Sign in to submit or upvote civic hazards.');
+                    setIsAuthModalOpen(true);
+                  }}
                 />
               )}
 
@@ -310,6 +373,7 @@ export default function App() {
                     setLostFoundModalType(type);
                     setIsLostFoundModalOpen(true);
                   }}
+                  currentUser={currentUser}
                 />
               )}
 
@@ -384,6 +448,7 @@ export default function App() {
           onSubmit={handleCreateCivicIssue}
           existingIssues={civicIssues}
           onUpvoteAndClose={handleUpvoteAndCloseDuplicate}
+          currentUser={currentUser}
         />
 
         {/* Civic Issue Detail Modal */}
@@ -396,6 +461,7 @@ export default function App() {
             onVerifyIssue={handleVerifyIssue}
             onAddComment={handleAddCivicComment}
             onUpdateStatus={handleUpdateCivicStatus}
+            currentUser={currentUser}
           />
         )}
 
@@ -405,6 +471,7 @@ export default function App() {
           onClose={() => setIsLostFoundModalOpen(false)}
           onSubmit={handleCreateLostFoundItem}
           initialType={lostFoundModalType}
+          currentUser={currentUser}
         />
 
         {/* Lost & Found Detail Modal */}
@@ -416,8 +483,17 @@ export default function App() {
             onMarkReunited={handleMarkLostFoundReunited}
             onAddComment={handleAddLostFoundComment}
             onSelectItem={(item) => setSelectedLostFoundItem(item)}
+            currentUser={currentUser}
           />
         )}
+
+        {/* Google Authentication Modal */}
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          onSignInWithGoogle={handleGoogleSignIn}
+          promptReason={authPromptReason}
+        />
 
         {/* PWA Install Prompt Banner */}
         <PWAInstallBanner />

@@ -1,16 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  Flame, 
+  Plus, 
+  Search, 
   MapPin, 
   Clock, 
-  MessageSquare, 
-  CheckCircle2, 
-  Search, 
+  Flame, 
   ArrowUpDown, 
-  Plus, 
-  Check,
-  TrendingUp,
-  Sparkles
+  CheckCircle2, 
+  Filter,
+  Sparkles,
+  AlertTriangle,
+  Layers,
+  UserCheck
 } from 'lucide-react';
 import { CIVIC_CATEGORIES, CIVIC_STATUSES } from '../types';
 import Icon from './Icon';
@@ -19,227 +20,233 @@ export default function CivicIssuesView({
   issues, 
   onSelectIssue, 
   onUpvoteIssue, 
-  onOpenReportModal 
+  onOpenReportModal,
+  currentUser,
+  onRequireAuth
 }) {
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('urgency');
+  const [sortBy, setSortBy] = useState('urgency'); // 'urgency', 'newest', 'severity'
+  const [onlyMyReports, setOnlyMyReports] = useState(false);
 
+  // Filter and Sort Logic with Multi-Factor Urgency Ranking
   const filteredIssues = useMemo(() => {
-    let result = [...issues];
+    return issues
+      .filter((issue) => {
+        // Search query match
+        const matchesSearch = 
+          issue.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          issue.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (issue.location?.name && issue.location.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    if (selectedCategory !== 'all') {
-      result = result.filter(item => item.category === selectedCategory);
-    }
+        // Category filter
+        const matchesCategory = selectedCategory === 'all' || issue.category === selectedCategory;
 
-    if (selectedStatus !== 'all') {
-      result = result.filter(item => item.status === selectedStatus);
-    }
+        // Status filter
+        const matchesStatus = selectedStatus === 'all' || issue.status === selectedStatus;
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        item => 
-          item.title.toLowerCase().includes(q) ||
-          item.description.toLowerCase().includes(q) ||
-          item.location?.name?.toLowerCase().includes(q)
-      );
-    }
+        // My reports filter
+        const matchesMyReports = !onlyMyReports || (currentUser && (issue.reporterId === currentUser.uid || issue.upvotedBy?.includes(currentUser.uid)));
 
-    result.sort((a, b) => {
-      if (sortBy === 'urgency') {
-        const scoreA = (a.urgencyUpvotes || 0) * 2 + (a.severity || 1) * 3 + (a.verifiedCount || 0);
-        const scoreB = (b.urgencyUpvotes || 0) * 2 + (b.severity || 1) * 3 + (b.verifiedCount || 0);
-        return scoreB - scoreA;
-      }
-      if (sortBy === 'severity') {
-        return (b.severity || 1) - (a.severity || 1);
-      }
-      if (sortBy === 'upvotes') {
-        return (b.urgencyUpvotes || 0) - (a.urgencyUpvotes || 0);
-      }
-      if (sortBy === 'recent') {
-        return new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime();
-      }
-      return 0;
-    });
+        return matchesSearch && matchesCategory && matchesStatus && matchesMyReports;
+      })
+      .sort((a, b) => {
+        const upvotesA = a.upvotedBy ? a.upvotedBy.length : (a.urgencyUpvotes || 0);
+        const upvotesB = b.upvotedBy ? b.upvotedBy.length : (b.urgencyUpvotes || 0);
 
-    return result;
-  }, [issues, selectedCategory, selectedStatus, searchQuery, sortBy]);
+        if (sortBy === 'urgency') {
+          // Weighted urgency: Upvotes * 3 + Severity * 2
+          const scoreA = (upvotesA * 3) + ((a.severity || 3) * 2);
+          const scoreB = (upvotesB * 3) + ((b.severity || 3) * 2);
+          return scoreB - scoreA;
+        }
+        if (sortBy === 'severity') {
+          return (b.severity || 3) - (a.severity || 3);
+        }
+        if (sortBy === 'newest') {
+          return new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime();
+        }
+        return 0;
+      });
+  }, [issues, searchQuery, selectedCategory, selectedStatus, sortBy, onlyMyReports, currentUser]);
+
+  const getCategoryInfo = (catId) => {
+    return CIVIC_CATEGORIES.find(c => c.id === catId) || {
+      label: catId,
+      icon: 'AlertCircle',
+      emoji: '⚠️',
+      tagClass: 'bg-stone-100 text-stone-700 border-stone-200'
+    };
+  };
 
   const getStatusInfo = (statusId) => {
     return CIVIC_STATUSES.find(s => s.id === statusId) || CIVIC_STATUSES[0];
   };
 
-  const getCategoryInfo = (catId) => {
-    return CIVIC_CATEGORIES.find(c => c.id === catId) || { label: catId, icon: 'AlertCircle', tagClass: 'bg-stone-100 text-stone-700' };
-  };
-
-  const timeAgo = (dateStr) => {
-    if (!dateStr) return '';
-    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-    if (diff < 60) return 'Just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
-  };
+  // Quick stats
+  const totalOpen = issues.filter(i => i.status !== 'resolved').length;
+  const totalResolved = issues.filter(i => i.status === 'resolved').length;
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 animate-fade-in">
       
-      {/* Top Banner with Vibrant Accents */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-        <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
-              Civic Watch & Hazard Triage
+      {/* Header Banner */}
+      <div className="bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-pink-500/10 dark:from-indigo-950/40 dark:via-purple-950/20 dark:to-pink-950/40 border border-indigo-200/60 dark:border-indigo-800/40 rounded-3xl p-6 sm:p-8 backdrop-blur-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/80 dark:bg-stone-800/80 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold shadow-subtle">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+              <span>IIEST Shibpur Civic Watch</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-stone-900 dark:text-white">
+              Campus Infrastructure & Hazards
             </h1>
-            <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-2.5 py-0.5 rounded-full flex items-center space-x-1">
-              <TrendingUp className="w-3 h-3 text-amber-500" />
-              <span>Prioritized by Votes</span>
-            </span>
+            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 max-w-xl leading-relaxed">
+              Report campus potholes, lighting blackouts, water leaks, and safety hazards with strict campus geotagging and verified community upvotes.
+            </p>
           </div>
-          <p className="text-stone-500 dark:text-stone-400 text-xs sm:text-sm mt-0.5">
-            Potholes, dark walkways, and plumbing faults at IIEST Shibpur surfaced directly to facility crews.
-          </p>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onOpenReportModal}
+              className="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all shadow-glow-indigo active:scale-95 flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Report New Hazard</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-2 shrink-0">
-          <button
-            onClick={() => onOpenReportModal('civic')}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-glow-indigo active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Report an Issue</span>
-          </button>
+        {/* Quick Metrics Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-indigo-100 dark:border-indigo-900/50 text-xs">
+          <div className="bg-white/60 dark:bg-stone-900/60 p-3 rounded-2xl border border-stone-200/60 dark:border-stone-800">
+            <span className="text-stone-400 block mb-0.5 font-medium">Active Hazards</span>
+            <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{totalOpen} Open</span>
+          </div>
+          <div className="bg-white/60 dark:bg-stone-900/60 p-3 rounded-2xl border border-stone-200/60 dark:border-stone-800">
+            <span className="text-stone-400 block mb-0.5 font-medium">Repaired & Resolved</span>
+            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{totalResolved} Fixed</span>
+          </div>
+          <div className="bg-white/60 dark:bg-stone-900/60 p-3 rounded-2xl border border-stone-200/60 dark:border-stone-800">
+            <span className="text-stone-400 block mb-0.5 font-medium">Ranking Engine</span>
+            <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">1 Vote / User</span>
+          </div>
+          <div className="bg-white/60 dark:bg-stone-900/60 p-3 rounded-2xl border border-stone-200/60 dark:border-stone-800">
+            <span className="text-stone-400 block mb-0.5 font-medium">Hand-Surveyed</span>
+            <span className="text-lg font-bold text-purple-600 dark:text-purple-400">152 Places</span>
+          </div>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-card dark:shadow-card-dark space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
-          
-          {/* Search Input */}
+      {/* Filter and Search Toolbar */}
+      <div className="bg-white dark:bg-stone-900 rounded-3xl p-4 sm:p-5 border border-stone-200/80 dark:border-stone-800 shadow-card dark:shadow-card-dark space-y-4">
+        
+        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+          {/* Search Bar */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by pothole, streetlight, Clock Tower, Library..."
-              className="w-full pl-9 pr-4 py-2 bg-stone-50 dark:bg-stone-800/80 hover:bg-stone-100/50 dark:hover:bg-stone-800 focus:bg-white dark:focus:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs sm:text-sm text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-stone-400"
+              placeholder="Search by hazard, building, or description..."
+              className="w-full pl-10 pr-4 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-xs sm:text-sm text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
             />
           </div>
 
-          {/* Status & Sorting */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Status Pills */}
-            <div className="flex items-center bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl text-xs font-medium border border-stone-200/60 dark:border-stone-700">
-              <button
-                onClick={() => setSelectedStatus('all')}
-                className={`px-3 py-1 rounded-lg transition-all ${
-                  selectedStatus === 'all' 
-                    ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-subtle font-bold' 
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setSelectedStatus('reported')}
-                className={`px-3 py-1 rounded-lg transition-all ${
-                  selectedStatus === 'reported' 
-                    ? 'bg-purple-600 text-white shadow-subtle font-bold' 
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-                }`}
-              >
-                Reported
-              </button>
-              <button
-                onClick={() => setSelectedStatus('in_progress')}
-                className={`px-3 py-1 rounded-lg transition-all ${
-                  selectedStatus === 'in_progress' 
-                    ? 'bg-amber-500 text-white shadow-subtle font-bold' 
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-                }`}
-              >
-                In Progress
-              </button>
-              <button
-                onClick={() => setSelectedStatus('resolved')}
-                className={`px-3 py-1 rounded-lg transition-all ${
-                  selectedStatus === 'resolved' 
-                    ? 'bg-emerald-600 text-white shadow-subtle font-bold' 
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-                }`}
-              >
-                Resolved
-              </button>
-            </div>
-
-            {/* Sort Selector */}
-            <div className="flex items-center space-x-1 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 px-2.5 py-1.5 rounded-xl text-xs text-stone-700 dark:text-stone-300 font-medium">
-              <ArrowUpDown className="w-3 h-3 text-stone-400" />
+          {/* Sort By Dropdown */}
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-xs font-semibold text-stone-700 dark:text-stone-300">
+              <ArrowUpDown className="w-3.5 h-3.5 text-stone-400" />
+              <span>Sort:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                aria-label="Sort issues by"
-                className="bg-transparent focus:outline-none cursor-pointer pr-1 text-stone-800 dark:text-stone-200"
+                className="bg-transparent text-stone-900 dark:text-white font-bold focus:outline-none cursor-pointer"
               >
-                <option value="urgency">🔥 Highest Urgency</option>
-                <option value="severity">⭐ Severity (1-5)</option>
-                <option value="upvotes">👍 Most Upvotes</option>
-                <option value="recent">🕒 Most Recent</option>
+                <option value="urgency" className="dark:bg-stone-900">Highest Urgency</option>
+                <option value="severity" className="dark:bg-stone-900">Severity (1-5)</option>
+                <option value="newest" className="dark:bg-stone-900">Newest First</option>
               </select>
             </div>
+
+            {/* My Reports Filter Toggle */}
+            {currentUser && (
+              <button
+                type="button"
+                onClick={() => setOnlyMyReports(!onlyMyReports)}
+                className={`px-3 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-1.5 border ${
+                  onlyMyReports
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-subtle'
+                    : 'bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:bg-stone-100'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>My Reports</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Category Pills */}
-        <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
+        {/* Category Filter Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all font-semibold ${
+            className={`px-3 py-1.5 rounded-xl font-bold transition-all shrink-0 ${
               selectedCategory === 'all'
                 ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900 shadow-subtle'
-                : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
+                : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
             }`}
           >
-            All Categories
+            All Hazards ({issues.length})
           </button>
-
-          {CIVIC_CATEGORIES.map(cat => {
+          
+          {CIVIC_CATEGORIES.map((cat) => {
+            const count = issues.filter(i => i.category === cat.id).length;
             const isSelected = selectedCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all flex items-center space-x-1.5 font-medium border ${
+                className={`px-3 py-1.5 rounded-xl font-semibold transition-all flex items-center space-x-1.5 shrink-0 border ${
                   isSelected
-                    ? 'bg-indigo-600 border-indigo-600 text-white font-bold shadow-subtle'
-                    : 'bg-stone-50 dark:bg-stone-800/80 border-stone-200/80 dark:border-stone-700/80 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700'
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-subtle'
+                    : 'bg-stone-50 dark:bg-stone-800/80 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:bg-stone-100'
                 }`}
               >
                 <span>{cat.emoji}</span>
                 <span>{cat.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-400'}`}>
+                  {count}
+                </span>
               </button>
             );
           })}
         </div>
+
       </div>
 
-      {/* Grid of Civic Issues */}
+      {/* Issues Grid */}
       {filteredIssues.length === 0 ? (
-        <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-12 text-center shadow-card">
-          <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">No issues found matching your filters</p>
-          <p className="text-xs text-stone-400 mt-1">Try resetting search keywords or category filters</p>
+        <div className="bg-white dark:bg-stone-900 rounded-3xl p-12 text-center border border-stone-200 dark:border-stone-800 space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center mx-auto text-xl">
+            🔍
+          </div>
+          <h3 className="font-bold text-base text-stone-900 dark:text-white">No hazards found</h3>
+          <p className="text-xs text-stone-500 max-w-sm mx-auto">
+            Try adjusting your search terms or filters, or submit a new report.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
           {filteredIssues.map((issue) => {
             const status = getStatusInfo(issue.status);
             const category = getCategoryInfo(issue.category);
+            
+            // Multi-user unique upvote calculation
+            const isUserUpvoted = currentUser ? issue.upvotedBy?.includes(currentUser.uid) : Boolean(issue.userUpvoted);
+            const upvoteTotal = issue.upvotedBy ? issue.upvotedBy.length : (issue.urgencyUpvotes || 0);
 
             return (
               <div
@@ -262,21 +269,21 @@ export default function CivicIssuesView({
                       </span>
                     </div>
 
-                    {/* Upvote Urgency Action Button */}
+                    {/* Upvote Urgency Action Button (Unique User Upvote) */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onUpvoteIssue(issue.id);
                       }}
                       className={`flex items-center space-x-1.5 px-3 py-1 rounded-xl border text-xs font-bold transition-all ${
-                        issue.userUpvoted
-                          ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-glow-amber'
+                        isUserUpvoted
+                          ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-glow-amber scale-105'
                           : 'bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-800 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60'
                       }`}
-                      title="Upvote to surface this hazard to campus maintenance"
+                      title={isUserUpvoted ? "You upvoted this hazard (Click to remove)" : "Upvote to boost priority for facility staff"}
                     >
-                      <Flame className={`w-3.5 h-3.5 ${issue.userUpvoted ? 'fill-current text-white' : 'text-orange-500'}`} />
-                      <span>{issue.urgencyUpvotes || 0}</span>
+                      <Flame className={`w-3.5 h-3.5 ${isUserUpvoted ? 'fill-current text-white animate-bounce-subtle' : 'text-orange-500'}`} />
+                      <span>{upvoteTotal}</span>
                     </button>
                   </div>
 
@@ -309,31 +316,25 @@ export default function CivicIssuesView({
                   </div>
                 </div>
 
-                {/* Footer */}
-                <div className="mt-3.5 pt-3 border-t border-stone-100 dark:border-stone-800/80 flex items-center justify-between text-xs text-stone-400">
+                {/* Card Footer: Reporter, Severity & Verification Count */}
+                <div className="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-[11px] text-stone-400">
                   <div className="flex items-center space-x-1.5">
-                    <span className="text-stone-400">Severity:</span>
-                    <span className={`font-bold px-1.5 py-0.2 rounded text-[11px] ${
-                      issue.severity >= 4 ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                    }`}>
-                      {issue.severity || 3}/5
+                    <Clock className="w-3 h-3" />
+                    <span>{new Date(issue.reportedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                    <span>•</span>
+                    <span className="text-stone-600 dark:text-stone-400 font-medium">
+                      {issue.reporterName || 'IIEST Member'}
                     </span>
                   </div>
 
-                  <div className="flex items-center space-x-3 text-stone-500 dark:text-stone-400">
-                    {issue.verifiedCount > 0 && (
-                      <span className="flex items-center space-x-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                        <Check className="w-3 h-3" />
-                        <span>{issue.verifiedCount} verified</span>
-                      </span>
-                    )}
-
-                    <span className="flex items-center space-x-1">
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>{issue.comments?.length || 0}</span>
+                  <div className="flex items-center space-x-3">
+                    <span className="font-semibold text-orange-600 dark:text-orange-400">
+                      Sev {issue.severity || 3}/5
                     </span>
-
-                    <span>{timeAgo(issue.reportedAt)}</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center space-x-0.5">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>{issue.verifiedCount || 1} verified</span>
+                    </span>
                   </div>
                 </div>
 
