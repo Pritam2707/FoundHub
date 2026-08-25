@@ -10,7 +10,8 @@ import {
   Check, 
   Calendar,
   User,
-  Share2
+  Share2,
+  Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CIVIC_CATEGORIES, CIVIC_STATUSES } from '../types';
@@ -25,6 +26,7 @@ export default function CivicDetailModal({
   onAddComment,
   onUpdateStatus,
   currentUser,
+  onRequireAuth
 }) {
   const [commentText, setCommentText] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -44,13 +46,19 @@ export default function CivicDetailModal({
 
   const handleCommentSubmit = (e) => {
     e.preventDefault();
+    if (!currentUser) {
+      if (typeof onRequireAuth === 'function') {
+        onRequireAuth('Sign in with Google to post community remarks.');
+      }
+      return;
+    }
     if (!commentText.trim()) return;
 
     const newComment = {
       id: `c-${Date.now()}`,
-      author: currentUser?.displayName || 'IIEST Community Member',
-      avatar: currentUser?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-      authorId: currentUser?.uid,
+      author: currentUser.displayName || 'IIEST Member',
+      avatar: currentUser.photoURL || '',
+      authorId: currentUser.uid,
       text: commentText.trim(),
       timestamp: new Date().toISOString(),
       upvotes: 0,
@@ -78,7 +86,7 @@ export default function CivicDetailModal({
           <div className="flex items-center space-x-2">
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border flex items-center space-x-1 ${currentCategory.tagClass}`}>
               <span>{currentCategory.emoji}</span>
-              <span>{currentCategory.label}</span>
+              <span>{issue.customCategory || currentCategory.label}</span>
             </span>
 
             <span className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${currentStatusInfo.badgeClass}`}>
@@ -153,7 +161,13 @@ export default function CivicDetailModal({
                   </div>
 
                   <button
-                    onClick={() => onUpvote(issue.id)}
+                    onClick={() => {
+                      if (!currentUser && typeof onRequireAuth === 'function') {
+                        onRequireAuth('Sign in with Google to cast your unique verified upvote on this hazard.');
+                      } else {
+                        onUpvote(issue.id);
+                      }
+                    }}
                     className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                       isUserUpvoted
                         ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-glow-amber scale-105'
@@ -172,7 +186,13 @@ export default function CivicDetailModal({
                       {[1, 2, 3, 4, 5].map(lvl => (
                         <button
                           key={lvl}
-                          onClick={() => onRateSeverity(issue.id, lvl)}
+                          onClick={() => {
+                            if (!currentUser && typeof onRequireAuth === 'function') {
+                              onRequireAuth('Sign in with Google to rate hazard severity.');
+                            } else {
+                              onRateSeverity(issue.id, lvl);
+                            }
+                          }}
                           className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
                             lvl <= (issue.severity || 3)
                               ? 'bg-orange-500 text-white shadow-subtle'
@@ -186,7 +206,13 @@ export default function CivicDetailModal({
                   </div>
 
                   <button
-                    onClick={() => onVerifyIssue(issue.id)}
+                    onClick={() => {
+                      if (!currentUser && typeof onRequireAuth === 'function') {
+                        onRequireAuth('Sign in with Google to verify this hazard sighting.');
+                      } else {
+                        onVerifyIssue(issue.id);
+                      }
+                    }}
                     className="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold flex items-center space-x-1"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
@@ -251,22 +277,38 @@ export default function CivicDetailModal({
             </h4>
 
             {/* Comment Form */}
-            <form onSubmit={handleCommentSubmit} className="flex gap-2">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder={currentUser ? `Comment as ${currentUser.displayName}...` : "Add a status update or sighting remark..."}
-                className="flex-1 px-3.5 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs sm:text-sm text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-subtle flex items-center space-x-1"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>Post</span>
-              </button>
-            </form>
+            {!currentUser ? (
+              <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center space-x-2 text-stone-600 dark:text-stone-300">
+                  <Lock className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <span>Sign in with Google to post remarks and updates on this hazard.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRequireAuth?.('Sign in with Google to post community remarks.')}
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-all shadow-subtle shrink-0"
+                >
+                  Sign In
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleCommentSubmit} className="flex gap-2">
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder={`Comment as ${currentUser.displayName}...`}
+                  className="flex-1 px-3.5 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-xs sm:text-sm text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-subtle flex items-center space-x-1"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Post</span>
+                </button>
+              </form>
+            )}
 
             {/* Comment Feed */}
             <div className="space-y-2">

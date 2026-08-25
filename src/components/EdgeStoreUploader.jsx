@@ -8,7 +8,8 @@ import {
   X, 
   Link as LinkIcon, 
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import { uploadToEdgeStore, useEdgeStore } from '../services/edgestore';
 
@@ -20,7 +21,9 @@ export default function EdgeStoreUploader({
   initialUrl = '',
   value = '',
   category = '',
-  samplePresets = []
+  samplePresets = [],
+  currentUser = null,
+  onRequireAuth
 }) {
   // Support all common prop naming conventions for seamless compatibility
   const notifyParent = (url) => {
@@ -56,6 +59,14 @@ export default function EdgeStoreUploader({
   const processFile = async (selected) => {
     if (!selected) return;
 
+    if (!currentUser) {
+      setError('Sign in with Google is required to upload images.');
+      if (typeof onRequireAuth === 'function') {
+        onRequireAuth('Sign in with Google to upload images.');
+      }
+      return;
+    }
+
     if (!selected.type.startsWith('image/')) {
       setError('Please select an image file (JPG, PNG, WebP, GIF).');
       return;
@@ -89,13 +100,22 @@ export default function EdgeStoreUploader({
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
+    if (!currentUser) {
+      if (typeof onRequireAuth === 'function') {
+        onRequireAuth('Sign in with Google to upload images.');
+      }
+      setError('Sign in with Google is required to upload images.');
+      return;
+    }
     const selected = e.dataTransfer.files?.[0];
     processFile(selected);
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    setIsDragOver(true);
+    if (currentUser) {
+      setIsDragOver(true);
+    }
   };
 
   const handleDragLeave = (e) => {
@@ -113,6 +133,13 @@ export default function EdgeStoreUploader({
 
   const handleApplyPastedUrl = (e) => {
     e.preventDefault();
+    if (!currentUser) {
+      if (typeof onRequireAuth === 'function') {
+        onRequireAuth('Sign in with Google to attach photos.');
+      }
+      setError('Sign in with Google is required to attach images.');
+      return;
+    }
     if (!pastedUrl.trim()) return;
     const url = pastedUrl.trim();
     setPreviewUrl(url);
@@ -123,6 +150,13 @@ export default function EdgeStoreUploader({
   };
 
   const handleSelectPreset = (url) => {
+    if (!currentUser) {
+      if (typeof onRequireAuth === 'function') {
+        onRequireAuth('Sign in with Google to attach photos.');
+      }
+      setError('Sign in with Google is required to attach images.');
+      return;
+    }
     setPreviewUrl(url);
     notifyParent(url);
     setError(null);
@@ -182,9 +216,20 @@ export default function EdgeStoreUploader({
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (!currentUser) {
+                if (typeof onRequireAuth === 'function') {
+                  onRequireAuth('Sign in with Google to upload images.');
+                }
+                setError('Sign in with Google is required to upload images.');
+                return;
+              }
+              fileInputRef.current?.click();
+            }}
             className={`border-2 border-dashed rounded-2xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all ${
-              isDragOver
+              !currentUser
+                ? 'border-amber-300 dark:border-amber-800/60 bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-50/70'
+                : isDragOver
                 ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 ring-2 ring-indigo-500/20'
                 : 'border-stone-200 dark:border-stone-700 hover:border-indigo-500/60 bg-stone-50/60 dark:bg-stone-800/40 hover:bg-stone-50 dark:hover:bg-stone-800/70'
             }`}
@@ -194,7 +239,7 @@ export default function EdgeStoreUploader({
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif,image/*"
               onChange={handleFileChange}
-              disabled={isUploading}
+              disabled={isUploading || !currentUser}
               className="hidden"
             />
 
@@ -209,6 +254,20 @@ export default function EdgeStoreUploader({
                     className="h-full bg-indigo-600 transition-all duration-200"
                     style={{ width: `${progress}%` }}
                   />
+                </div>
+              </div>
+            ) : !currentUser ? (
+              <div className="flex flex-col items-center text-center space-y-1.5 py-1">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200 dark:border-amber-800/60 shadow-subtle">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-stone-800 dark:text-stone-200 block">
+                    Sign in with Google to upload photos
+                  </span>
+                  <span className="text-[11px] text-stone-400 mt-0.5 block">
+                    Visitors have view-only access • Click to authenticate
+                  </span>
                 </div>
               </div>
             ) : (

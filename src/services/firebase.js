@@ -1,14 +1,17 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { 
   getFirestore, 
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   collection, 
   onSnapshot, 
   doc, 
   setDoc, 
   updateDoc, 
+  deleteDoc,
   query, 
-  orderBy,
-  enableIndexedDbPersistence
+  orderBy
 } from 'firebase/firestore';
 import { 
   getAuth, 
@@ -44,20 +47,23 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 if (isFirebaseConfigured) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-    db = getFirestore(app);
-    auth = getAuth(app);
     
-    // Enable offline persistence in supported browser environments
     if (typeof window !== 'undefined') {
-      enableIndexedDbPersistence(db).catch((err) => {
-        if (err.code === 'failed-precondition') {
-          console.warn('Firestore persistence failed: Multiple tabs open');
-        } else if (err.code === 'unimplemented') {
-          console.warn('Firestore persistence is not supported by this browser');
-        }
-      });
+      try {
+        db = initializeFirestore(app, {
+          localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager(),
+          }),
+        });
+      } catch (cacheErr) {
+        db = getFirestore(app);
+      }
+    } else {
+      db = getFirestore(app);
     }
-    console.log('✅ Connected to Firebase Firestore & Auth with offline cache');
+
+    auth = getAuth(app);
+    console.log('✅ Connected to Firebase Firestore & Auth with persistent multi-tab cache');
   } catch (err) {
     console.error('Firebase initialization error:', err);
   }
@@ -175,12 +181,38 @@ export function subscribeToLostFound(onUpdate) {
 }
 
 /**
+ * Recursively strip undefined values from data objects before passing to Firestore setDoc/updateDoc
+ * to prevent FirebaseError: Unsupported field value: undefined
+ */
+export function sanitizeForFirestore(obj) {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  if (Array.isArray(obj)) {
+    return obj
+      .filter((item) => item !== undefined)
+      .map((item) => sanitizeForFirestore(item));
+  }
+  if (typeof obj === 'object' && !(obj instanceof Date)) {
+    const clean = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        clean[key] = sanitizeForFirestore(value);
+      }
+    }
+    return clean;
+  }
+  return obj;
+}
+
+/**
  * Firestore Mutations with LocalStorage Sync
  */
 export async function syncCivicIssue(issue) {
   if (db && isFirebaseConfigured) {
     try {
-      await setDoc(doc(db, 'civic_issues', issue.id), issue, { merge: true });
+      const sanitized = sanitizeForFirestore(issue);
+      await setDoc(doc(db, 'civic_issues', issue.id), sanitized, { merge: true });
     } catch (e) {
       console.error('Error syncing civic issue to Firestore:', e);
     }
@@ -190,9 +222,31 @@ export async function syncCivicIssue(issue) {
 export async function syncLostFoundItem(item) {
   if (db && isFirebaseConfigured) {
     try {
-      await setDoc(doc(db, 'lost_found_items', item.id), item, { merge: true });
+      const sanitized = sanitizeForFirestore(item);
+      await setDoc(doc(db, 'lost_found_items', item.id), sanitized, { merge: true });
     } catch (e) {
       console.error('Error syncing lost & found item to Firestore:', e);
     }
   }
 }
+
+export async function deleteCivicIssue(issueId) {
+  if (db && isFirebaseConfigured) {
+    try {
+      await deleteDoc(doc(db, 'civic_issues', issueId));
+    } catch (e) {
+      console.error('Error deleting civic issue from Firestore:', e);
+    }
+  }
+}
+
+export async function deleteLostFoundItem(itemId) {
+  if (db && isFirebaseConfigured) {
+    try {
+      await deleteDoc(doc(db, 'lost_found_items', itemId));
+    } catch (e) {
+      console.error('Error deleting lost & found item from Firestore:', e);
+    }
+  }
+}
+

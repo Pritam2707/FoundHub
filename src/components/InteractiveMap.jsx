@@ -154,6 +154,30 @@ export default function InteractiveMap({
   const [currentZoom, setCurrentZoom] = useState(17);
   const [flyCoords, setFlyCoords] = useState(null);
   const [hoverCoords, setHoverCoords] = useState({ lat: '22.555500', lng: '88.306000' });
+  const [userLocation, setUserLocation] = useState(null);
+  const [isGpsLocating, setIsGpsLocating] = useState(false);
+
+  const handleLocateMe = () => {
+    setIsGpsLocating(true);
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = Number(position.coords.latitude.toFixed(6));
+          const lng = Number(position.coords.longitude.toFixed(6));
+          setUserLocation([lat, lng]);
+          setFlyCoords([lat, lng]);
+          setIsGpsLocating(false);
+        },
+        (err) => {
+          console.warn('GPS locate error:', err);
+          setIsGpsLocating(false);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    } else {
+      setIsGpsLocating(false);
+    }
+  };
 
   const activeCivicCount = civicIssues.length;
   const activeLostCount = lostFoundItems.filter(i => i.type === 'lost').length;
@@ -568,7 +592,42 @@ export default function InteractiveMap({
                 );
               })}
 
+              {/* Live User GPS Location Pin */}
+              {userLocation && (
+                <Marker
+                  position={userLocation}
+                  icon={L.divIcon({
+                    className: 'live-user-gps-pin',
+                    html: `
+                      <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">
+                        <div style="position: absolute; width: 32px; height: 32px; border-radius: 50%; background: rgba(59, 130, 246, 0.4); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                        <div style="width: 16px; height: 16px; border-radius: 50%; background: #2563EB; border: 3px solid #FFFFFF; box-shadow: 0 0 10px rgba(37, 99, 235, 0.8);"></div>
+                      </div>
+                    `,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16],
+                  })}
+                >
+                  <Tooltip permanent direction="top" className="custom-clean-map-tooltip">
+                    <span>📍 Your Live Location</span>
+                  </Tooltip>
+                </Marker>
+              )}
+
             </MapContainer>
+
+            {/* Floating Auto-Locate Button */}
+            <div className="absolute top-3 right-3 z-[1000]">
+              <button
+                type="button"
+                onClick={handleLocateMe}
+                disabled={isGpsLocating}
+                className="px-3 py-2 rounded-xl text-xs font-bold bg-white/90 dark:bg-stone-900/90 text-stone-800 dark:text-white border border-stone-200 dark:border-stone-700 shadow-modal hover:bg-white flex items-center space-x-1.5 transition-all"
+              >
+                <Navigation className={`w-3.5 h-3.5 text-blue-500 ${isGpsLocating ? 'animate-spin' : ''}`} />
+                <span>{isGpsLocating ? 'Locating...' : 'My Live GPS'}</span>
+              </button>
+            </div>
 
             {/* Live Cursor Coordinate HUD */}
             <div className="absolute bottom-3 left-3 bg-stone-950/85 backdrop-blur-md border border-stone-700/80 text-white px-3 py-1.5 rounded-xl text-[11px] font-mono flex items-center space-x-2 shadow-card-dark pointer-events-none z-[1000]">

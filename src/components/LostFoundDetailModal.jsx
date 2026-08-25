@@ -24,9 +24,10 @@ export default function LostFoundDetailModal({
   allItems, 
   onClose, 
   onMarkReunited, 
-  onAddComment,
-  onSelectItem,
-  currentUser
+  onAddComment, 
+  onSelectItem, 
+  currentUser,
+  onRequireAuth
 }) {
   const [commentText, setCommentText] = useState('');
   const [claimAnswer, setClaimAnswer] = useState('');
@@ -52,13 +53,19 @@ export default function LostFoundDetailModal({
 
   const handleCommentSubmit = (e) => {
     e.preventDefault();
+    if (!currentUser) {
+      if (typeof onRequireAuth === 'function') {
+        onRequireAuth('Sign in with Google to leave sighting tips.');
+      }
+      return;
+    }
     if (!commentText.trim()) return;
 
     const newComment = {
       id: `lfc-${Date.now()}`,
-      author: currentUser?.displayName || 'IIEST Community Member',
-      avatar: currentUser?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-      authorId: currentUser?.uid,
+      author: currentUser.displayName || 'IIEST Member',
+      avatar: currentUser.photoURL || '',
+      authorId: currentUser.uid,
       text: commentText.trim(),
       timestamp: new Date().toISOString(),
     };
@@ -69,15 +76,21 @@ export default function LostFoundDetailModal({
 
   const handleClaimSubmit = (e) => {
     e.preventDefault();
+    if (!currentUser) {
+      if (typeof onRequireAuth === 'function') {
+        onRequireAuth('Sign in with Google to submit an ownership claim.');
+      }
+      return;
+    }
     setClaimSubmitted(true);
     setIsClaiming(false);
 
     const claimNote = {
       id: `lfc-${Date.now()}`,
-      author: `Claim by ${currentUser?.displayName || 'Claimant'}`,
-      avatar: currentUser?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-      authorId: currentUser?.uid,
-      text: `🔐 Ownership Verification Answer: "${claimAnswer.trim()}". Contact: ${claimContact.trim() || currentUser?.email}`,
+      author: `Claim by ${currentUser.displayName || 'Claimant'}`,
+      avatar: currentUser.photoURL || '',
+      authorId: currentUser.uid,
+      text: `🔐 Ownership Verification Answer: "${claimAnswer.trim()}". Contact: ${claimContact.trim() || currentUser.email || 'No contact provided'}`,
       timestamp: new Date().toISOString(),
       isClaim: true,
     };
@@ -86,6 +99,12 @@ export default function LostFoundDetailModal({
   };
 
   const triggerReunitedCelebration = () => {
+    if (!currentUser) {
+      if (typeof onRequireAuth === 'function') {
+        onRequireAuth('Sign in with Google to mark items as reunited.');
+      }
+      return;
+    }
     confetti({
       particleCount: 100,
       spread: 70,
@@ -212,7 +231,13 @@ export default function LostFoundDetailModal({
                 <div className="flex gap-2 pt-2">
                   {!isLost && (
                     <button
-                      onClick={() => setIsClaiming(!isClaiming)}
+                      onClick={() => {
+                        if (!currentUser && typeof onRequireAuth === 'function') {
+                          onRequireAuth('Sign in with Google to submit an ownership claim.');
+                        } else {
+                          setIsClaiming(!isClaiming);
+                        }
+                      }}
                       className="flex-1 py-2 px-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold transition-all flex items-center justify-center space-x-1"
                     >
                       <HeartHandshake className="w-3.5 h-3.5" />
@@ -344,21 +369,37 @@ export default function LostFoundDetailModal({
               )}
             </div>
 
-            <form onSubmit={handleCommentSubmit} className="flex gap-2">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Leave a sighting tip..."
-                className="flex-1 px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-white"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold"
-              >
-                Send
-              </button>
-            </form>
+            {!currentUser ? (
+              <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center space-x-2 text-stone-600 dark:text-stone-300">
+                  <Lock className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <span>Sign in with Google to leave sighting tips or remarks.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRequireAuth?.('Sign in with Google to leave sighting tips.')}
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-all shadow-subtle shrink-0"
+                >
+                  Sign In
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleCommentSubmit} className="flex gap-2">
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Leave a sighting tip..."
+                  className="flex-1 px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-white"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold"
+                >
+                  Send
+                </button>
+              </form>
+            )}
           </div>
 
         </div>

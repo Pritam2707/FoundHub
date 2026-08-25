@@ -7,35 +7,45 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png', 'icons/*.svg'],
       manifest: {
+        id: '/',
         name: 'CivicBloom & FoundHub',
         short_name: 'CivicBloom',
         description: 'Community Civic Issue Resolution & Lost Item Platform',
-        theme_color: '#5B5BE6',
-        background_color: '#F8F9FA',
+        theme_color: '#4F46E5',
+        background_color: '#0C0E14',
         display: 'standalone',
         orientation: 'portrait-primary',
         icons: [
           {
             src: '/icons/icon-192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
-            src: '/icons/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png'
+            src: '/icons/icon-maskable-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
           },
           {
             src: '/icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: '/icons/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
@@ -69,6 +79,18 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          leaflet: ['leaflet', 'react-leaflet'],
+          firebase: ['firebase/app', 'firebase/firestore', 'firebase/auth'],
+        },
+      },
+    },
+  },
   server: {
     port: 3000,
     open: false,
@@ -80,3 +102,4 @@ export default defineConfig({
     }
   },
 });
+

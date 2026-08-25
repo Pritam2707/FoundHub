@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -17,19 +18,39 @@ const PORT = process.env.PORT || 3001;
 
 // Global Middleware
 app.use(cors({
-  origin: '*',
+  origin: true,
   credentials: true,
 }));
 
+app.use(cookieParser());
 app.use(express.json());
 
 // EdgeStore Cloud Bucket Handler
-const edgeStoreHandler = createEdgeStoreExpressHandler({
-  router: edgeStoreRouter,
-});
+try {
+  const edgeStoreHandler = createEdgeStoreExpressHandler({
+    router: edgeStoreRouter,
+  });
 
-app.get('/api/edgestore/*', edgeStoreHandler);
-app.post('/api/edgestore/*', edgeStoreHandler);
+  app.all('/api/edgestore/*', async (req, res, next) => {
+    try {
+      await edgeStoreHandler(req, res);
+    } catch (err) {
+      console.error('EdgeStore request processing error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'EdgeStore processing error', message: err.message });
+      }
+    }
+  });
+} catch (err) {
+  console.warn('EdgeStore handler initialization deferred:', err.message);
+  app.all('/api/edgestore/*', (req, res) => {
+    res.status(200).json({
+      status: 'fallback',
+      configured: false,
+      message: 'Running in resilient offline/client compression mode',
+    });
+  });
+}
 
 // Backend Health & Info API
 app.get('/api/health', (req, res) => {

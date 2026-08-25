@@ -65,6 +65,14 @@ export const CIVIC_CATEGORIES = [
     accentColor: '#10B981',
     emoji: '🍃'
   },
+  { 
+    id: 'other', 
+    label: 'Other / Custom Hazard', 
+    icon: 'AlertCircle', 
+    tagClass: 'bg-stone-100 dark:bg-stone-800/90 text-stone-800 dark:text-stone-200 border-stone-200 dark:border-stone-700',
+    accentColor: '#78716C',
+    emoji: '⚠️'
+  },
 ];
 
 export const CIVIC_STATUSES = [

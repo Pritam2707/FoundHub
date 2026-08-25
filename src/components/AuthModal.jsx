@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, Sparkles, HeartHandshake } from 'lucide-react';
+import { X, ShieldCheck, Sparkles, HeartHandshake, Lock, Eye } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, onSignInWithGoogle, promptReason = '' }) {
   if (!isOpen) return null;
@@ -20,12 +20,24 @@ export default function AuthModal({ isOpen, onClose, onSignInWithGoogle, promptR
         </div>
 
         <h3 className="text-xl font-bold text-stone-900 dark:text-white mb-1.5">
-          Sign In to FoundHub
+          Sign In with Google
         </h3>
         
-        <p className="text-xs text-stone-500 dark:text-stone-400 mb-6 leading-relaxed px-2">
-          {promptReason || 'Sign in with your Google account to upvote hazards, verify reports, and manage your campus submissions.'}
+        <p className="text-xs text-stone-500 dark:text-stone-400 mb-4 leading-relaxed px-2">
+          {promptReason || 'Unauthenticated visitors can view all items. Sign in to submit reports, upload photos, claim items, or vote.'}
         </p>
+
+        {/* View-Only vs Member Feature Cards */}
+        <div className="mb-5 bg-stone-50 dark:bg-stone-800/60 p-3 rounded-2xl border border-stone-200/80 dark:border-stone-700/70 text-left space-y-2 text-xs">
+          <div className="flex items-center space-x-2 text-stone-600 dark:text-stone-300">
+            <Eye className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+            <span><strong>Guests:</strong> Browse hazard watch & lost/found listings</span>
+          </div>
+          <div className="flex items-center space-x-2 text-emerald-700 dark:text-emerald-300">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <span><strong>Signed-in Users:</strong> Post hazards, upload photos, claim & vote</span>
+          </div>
+        </div>
 
         {/* Google Sign-in Button */}
         <button
@@ -57,9 +69,9 @@ export default function AuthModal({ isOpen, onClose, onSignInWithGoogle, promptR
           <span>Continue with Google</span>
         </button>
 
-        <div className="mt-6 pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-center space-x-2 text-[11px] text-stone-400">
+        <div className="mt-5 pt-3.5 border-t border-stone-100 dark:border-stone-800 flex items-center justify-center space-x-2 text-[11px] text-stone-400">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Each unique user gets exactly 1 verifiable upvote per issue</span>
+          <span>IIEST Shibpur Community Portal</span>
         </div>
 
       </div>

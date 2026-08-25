@@ -8,10 +8,11 @@ import {
   ArrowUpDown, 
   CheckCircle2, 
   Filter,
-  Sparkles,
-  AlertTriangle,
-  Layers,
-  UserCheck
+  Sparkles, 
+  AlertTriangle, 
+  Layers, 
+  UserCheck,
+  Lock
 } from 'lucide-react';
 import { CIVIC_CATEGORIES, CIVIC_STATUSES } from '../types';
 import Icon from './Icon';
@@ -109,34 +110,53 @@ export default function CivicIssuesView({
 
           <div className="flex items-center gap-3">
             <button
-              onClick={onOpenReportModal}
+              onClick={() => {
+                if (!currentUser && typeof onRequireAuth === 'function') {
+                  onRequireAuth('Sign in with Google to report campus infrastructure hazards.');
+                } else {
+                  onOpenReportModal();
+                }
+              }}
+              title={!currentUser ? "Sign in required to report hazards" : "Report New Campus Hazard"}
               className="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all shadow-glow-indigo active:scale-95 flex items-center space-x-2"
             >
-              <Plus className="w-4 h-4" />
+              {!currentUser ? <Lock className="w-4 h-4 text-indigo-200" /> : <Plus className="w-4 h-4" />}
               <span>Report New Hazard</span>
             </button>
           </div>
         </div>
 
         {/* Quick Metrics Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-indigo-100 dark:border-indigo-900/50 text-xs">
-          <div className="bg-white/60 dark:bg-stone-900/60 p-3 rounded-2xl border border-stone-200/60 dark:border-stone-800">
-            <span className="text-stone-400 block mb-0.5 font-medium">Active Hazards</span>
-            <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{totalOpen} Open</span>
+        <div className="flex flex-wrap items-center gap-3 mt-5 pt-5 border-t border-indigo-100/80 dark:border-indigo-900/40 text-xs">
+          <div className="inline-flex items-center space-x-2 bg-white/70 dark:bg-stone-900/70 px-3.5 py-2 rounded-2xl border border-stone-200/60 dark:border-stone-800">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-stone-500 dark:text-stone-400 font-medium">Active Hazards:</span>
+            <span className="font-bold text-amber-600 dark:text-amber-400">{totalOpen} Open</span>
           </div>
-          <div className="bg-white/60 dark:bg-stone-900/60 p-3 rounded-2xl border border-stone-200/60 dark:border-stone-800">
-            <span className="text-stone-400 block mb-0.5 font-medium">Repaired & Resolved</span>
-            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{totalResolved} Fixed</span>
-          </div>
-          <div className="bg-white/60 dark:bg-stone-900/60 p-3 rounded-2xl border border-stone-200/60 dark:border-stone-800">
-            <span className="text-stone-400 block mb-0.5 font-medium">Ranking Engine</span>
-            <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">1 Vote / User</span>
-          </div>
-          <div className="bg-white/60 dark:bg-stone-900/60 p-3 rounded-2xl border border-stone-200/60 dark:border-stone-800">
-            <span className="text-stone-400 block mb-0.5 font-medium">Hand-Surveyed</span>
-            <span className="text-lg font-bold text-purple-600 dark:text-purple-400">152 Places</span>
+          <div className="inline-flex items-center space-x-2 bg-white/70 dark:bg-stone-900/70 px-3.5 py-2 rounded-2xl border border-stone-200/60 dark:border-stone-800">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-stone-500 dark:text-stone-400 font-medium">Repaired & Resolved:</span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">{totalResolved} Fixed</span>
           </div>
         </div>
+
+        {/* Guest View-Only Banner */}
+        {!currentUser && (
+          <div className="mt-4 pt-3 border-t border-indigo-100/60 dark:border-indigo-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 dark:bg-stone-900/60 p-3 rounded-2xl border border-indigo-200/50 dark:border-indigo-800/40 text-xs">
+            <div className="flex items-center space-x-2 text-stone-700 dark:text-stone-300">
+              <span className="text-sm">👀</span>
+              <span className="font-medium">
+                <strong>Public View-Only Mode:</strong> Browse all verified campus hazard reports. Sign in to submit a report or upvote.
+              </span>
+            </div>
+            <button
+              onClick={() => onRequireAuth?.('Sign in with Google to report or upvote civic hazards.')}
+              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-subtle text-xs shrink-0 self-start sm:self-center"
+            >
+              Sign In with Google
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filter and Search Toolbar */}
@@ -260,7 +280,7 @@ export default function CivicIssuesView({
                     <div className="flex items-center space-x-2">
                       <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-md border flex items-center space-x-1 ${category.tagClass}`}>
                         <span>{category.emoji}</span>
-                        <span>{category.label}</span>
+                        <span>{issue.customCategory || category.label}</span>
                       </span>
 
                       <span className={`inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${status.badgeClass}`}>

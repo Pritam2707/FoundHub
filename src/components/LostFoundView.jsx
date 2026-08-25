@@ -7,7 +7,8 @@ import {
   HeartHandshake,
   Award,
   Plus,
-  ArrowRight
+  ArrowRight,
+  Lock
 } from 'lucide-react';
 import { LOST_FOUND_CATEGORIES } from '../types';
 import { findMatchesForPost } from '../services/matchingEngine';
@@ -17,7 +18,8 @@ export default function LostFoundView({
   items,
   onSelectItem,
   onOpenCreateModal,
-  currentUser
+  currentUser,
+  onRequireAuth
 }) {
   const [selectedType, setSelectedType] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -111,21 +113,53 @@ export default function LostFoundView({
 
         <div className="flex items-center space-x-2 shrink-0">
           <button
-            onClick={() => onOpenCreateModal('lost')}
+            onClick={() => {
+              if (!currentUser && typeof onRequireAuth === 'function') {
+                onRequireAuth('Sign in with Google to report a lost belonging.');
+              } else {
+                onOpenCreateModal('lost');
+              }
+            }}
+            title={!currentUser ? "Sign in required to post lost items" : "Report Lost Belonging"}
             className="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-subtle"
           >
-            <Plus className="w-3.5 h-3.5" />
+            {!currentUser ? <Lock className="w-3.5 h-3.5 text-pink-200" /> : <Plus className="w-3.5 h-3.5" />}
             <span>Lost an item</span>
           </button>
           <button
-            onClick={() => onOpenCreateModal('found')}
+            onClick={() => {
+              if (!currentUser && typeof onRequireAuth === 'function') {
+                onRequireAuth('Sign in with Google to report a found belonging.');
+              } else {
+                onOpenCreateModal('found');
+              }
+            }}
+            title={!currentUser ? "Sign in required to post found items" : "Report Found Belonging"}
             className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-subtle"
           >
-            <Plus className="w-3.5 h-3.5" />
+            {!currentUser ? <Lock className="w-3.5 h-3.5 text-sky-200" /> : <Plus className="w-3.5 h-3.5" />}
             <span>Found an item</span>
           </button>
         </div>
       </div>
+
+      {/* Guest View-Only Banner */}
+      {!currentUser && (
+        <div className="bg-sky-500/10 dark:bg-sky-500/15 border border-sky-300/60 dark:border-sky-700/60 rounded-2xl p-3.5 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center space-x-2 text-sky-900 dark:text-sky-200">
+            <span className="text-sm">👀</span>
+            <span className="font-medium">
+              <strong>Public View-Only Mode:</strong> Browse all lost & found belongings on campus. Sign in with Google to post items, claim belongings, or leave tips.
+            </span>
+          </div>
+          <button
+            onClick={() => onRequireAuth?.('Sign in with Google to post or claim belongings.')}
+            className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition-all shadow-subtle shrink-0 self-start sm:self-center"
+          >
+            Sign In with Google
+          </button>
+        </div>
+      )}
 
       {/* Smart Match Suggestion Alert */}
       {systemMatches.length > 0 && (

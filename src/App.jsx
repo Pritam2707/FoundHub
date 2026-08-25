@@ -16,6 +16,8 @@ import {
   subscribeToLostFound, 
   syncCivicIssue, 
   syncLostFoundItem,
+  deleteCivicIssue,
+  deleteLostFoundItem,
   subscribeToAuth,
   signInWithGoogle,
   signOutUser,
@@ -38,6 +40,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authPromptReason, setAuthPromptReason] = useState('');
+  const [deletedItemsHistory, setDeletedItemsHistory] = useState([]);
 
   // Theme Management (Dark Mode by default, user-controlled toggle)
   const [isDark, setIsDark] = useState(() => {
@@ -162,6 +165,12 @@ export default function App() {
 
   // Rate Severity
   const handleRateSeverity = (issueId, severityLevel) => {
+    if (!currentUser) {
+      setAuthPromptReason('Sign in with Google to rate hazard severity.');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     const updated = civicIssues.map((issue) => {
       if (issue.id === issueId) {
         const modified = { ...issue, severity: severityLevel };
@@ -179,6 +188,12 @@ export default function App() {
 
   // Verify Issue
   const handleVerifyIssue = (issueId) => {
+    if (!currentUser) {
+      setAuthPromptReason('Sign in with Google to verify this hazard sighting.');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     const updated = civicIssues.map((issue) => {
       if (issue.id === issueId) {
         const modified = { ...issue, verifiedCount: (issue.verifiedCount || 0) + 1 };
@@ -196,6 +211,12 @@ export default function App() {
 
   // Add Comment to Civic Issue
   const handleAddCivicComment = (issueId, comment) => {
+    if (!currentUser) {
+      setAuthPromptReason('Sign in with Google to post community remarks.');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     const updated = civicIssues.map((issue) => {
       if (issue.id === issueId) {
         const modified = {
@@ -216,6 +237,12 @@ export default function App() {
 
   // Update Status in Pipeline
   const handleUpdateCivicStatus = (issueId, newStatus, note) => {
+    if (!currentUser) {
+      setAuthPromptReason('Facility staff sign-in required to update issue status.');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     const updated = civicIssues.map((issue) => {
       if (issue.id === issueId) {
         const historyEntry = {
@@ -248,6 +275,12 @@ export default function App() {
 
   // Create new civic issue
   const handleCreateCivicIssue = (newIssue) => {
+    if (!currentUser) {
+      setAuthPromptReason('Sign in with Google to report campus infrastructure hazards.');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     const updated = [newIssue, ...civicIssues];
     updateAndSaveCivicIssues(updated);
     syncCivicIssue(newIssue);
@@ -255,6 +288,12 @@ export default function App() {
 
   // Create new lost & found item
   const handleCreateLostFoundItem = (newItem) => {
+    if (!currentUser) {
+      setAuthPromptReason('Sign in with Google to post lost or found items.');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     const updated = [newItem, ...lostFoundItems];
     updateAndSaveLostFound(updated);
     syncLostFoundItem(newItem);
@@ -262,6 +301,12 @@ export default function App() {
 
   // Mark Lost & Found item as Reunited
   const handleMarkLostFoundReunited = (itemId) => {
+    if (!currentUser) {
+      setAuthPromptReason('Sign in with Google to mark items as reunited.');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     const updated = lostFoundItems.map((item) => {
       if (item.id === itemId) {
         const modified = {
@@ -283,6 +328,12 @@ export default function App() {
 
   // Add Comment to Lost & Found item
   const handleAddLostFoundComment = (itemId, comment) => {
+    if (!currentUser) {
+      setAuthPromptReason('Sign in with Google to leave sighting tips or claim remarks.');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     const updated = lostFoundItems.map((item) => {
       if (item.id === itemId) {
         const modified = {
@@ -301,6 +352,74 @@ export default function App() {
     }
   };
 
+  // Delete Civic Issue (Spam, Scam, Fake, or Duplicate)
+  const handleDeleteCivicIssue = (issueId, reason = 'fake', adminNotes = '') => {
+    const itemToDelete = civicIssues.find(i => i.id === issueId);
+    if (!itemToDelete) return;
+
+    const updated = civicIssues.filter(i => i.id !== issueId);
+    updateAndSaveCivicIssues(updated);
+    deleteCivicIssue(issueId);
+
+    const historyRecord = {
+      id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      originalId: issueId,
+      itemType: 'civic',
+      item: itemToDelete,
+      reason,
+      adminNotes,
+      deletedAt: new Date().toISOString(),
+      moderator: currentUser?.displayName || 'Campus Facility Admin'
+    };
+    setDeletedItemsHistory(prev => [historyRecord, ...prev]);
+
+    if (selectedCivicIssue?.id === issueId) {
+      setSelectedCivicIssue(null);
+    }
+  };
+
+  // Delete Lost & Found Item (Scam, Spam, Fake, or Phishing)
+  const handleDeleteLostFoundItem = (itemId, reason = 'scam', adminNotes = '') => {
+    const itemToDelete = lostFoundItems.find(i => i.id === itemId);
+    if (!itemToDelete) return;
+
+    const updated = lostFoundItems.filter(i => i.id !== itemId);
+    updateAndSaveLostFound(updated);
+    deleteLostFoundItem(itemId);
+
+    const historyRecord = {
+      id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      originalId: itemId,
+      itemType: 'lostfound',
+      item: itemToDelete,
+      reason,
+      adminNotes,
+      deletedAt: new Date().toISOString(),
+      moderator: currentUser?.displayName || 'Campus Facility Admin'
+    };
+    setDeletedItemsHistory(prev => [historyRecord, ...prev]);
+
+    if (selectedLostFoundItem?.id === itemId) {
+      setSelectedLostFoundItem(null);
+    }
+  };
+
+  // Restore Civic Issue from Trash
+  const handleRestoreCivicIssue = (issue) => {
+    const updated = [issue, ...civicIssues.filter(i => i.id !== issue.id)];
+    updateAndSaveCivicIssues(updated);
+    syncCivicIssue(issue);
+    setDeletedItemsHistory(prev => prev.filter(r => r.originalId !== issue.id));
+  };
+
+  // Restore Lost & Found Item from Trash
+  const handleRestoreLostFoundItem = (item) => {
+    const updated = [item, ...lostFoundItems.filter(i => i.id !== item.id)];
+    updateAndSaveLostFound(updated);
+    syncLostFoundItem(item);
+    setDeletedItemsHistory(prev => prev.filter(r => r.originalId !== item.id));
+  };
+
   // Reset to default seed data
   const handleResetData = () => {
     if (window.confirm('Reset all demo data to initial IIEST Shibpur sample dataset?')) {
@@ -313,12 +432,27 @@ export default function App() {
   };
 
   const handleOpenReportModal = (type) => {
+    if (!currentUser) {
+      setAuthPromptReason(
+        type === 'civic'
+          ? 'Sign in with Google to report campus infrastructure hazards and issues.'
+          : 'Sign in with Google to post lost or found belongings.'
+      );
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     if (type === 'civic') {
       setIsCivicModalOpen(true);
     } else {
       setLostFoundModalType('lost');
       setIsLostFoundModalOpen(true);
     }
+  };
+
+  const triggerAuthPrompt = (reason) => {
+    setAuthPromptReason(reason || 'Sign in with Google to access this feature.');
+    setIsAuthModalOpen(true);
   };
 
   return (
@@ -355,12 +489,9 @@ export default function App() {
                   issues={civicIssues}
                   onSelectIssue={(issue) => setSelectedCivicIssue(issue)}
                   onUpvoteIssue={handleUpvoteCivicIssue}
-                  onOpenReportModal={() => setIsCivicModalOpen(true)}
+                  onOpenReportModal={() => handleOpenReportModal('civic')}
                   currentUser={currentUser}
-                  onRequireAuth={() => {
-                    setAuthPromptReason('Sign in to submit or upvote civic hazards.');
-                    setIsAuthModalOpen(true);
-                  }}
+                  onRequireAuth={(reason) => triggerAuthPrompt(reason || 'Sign in with Google to report or upvote civic hazards.')}
                 />
               )}
 
@@ -370,10 +501,15 @@ export default function App() {
                   items={lostFoundItems}
                   onSelectItem={(item) => setSelectedLostFoundItem(item)}
                   onOpenCreateModal={(type) => {
+                    if (!currentUser) {
+                      triggerAuthPrompt('Sign in with Google to post lost or found items.');
+                      return;
+                    }
                     setLostFoundModalType(type);
                     setIsLostFoundModalOpen(true);
                   }}
                   currentUser={currentUser}
+                  onRequireAuth={(reason) => triggerAuthPrompt(reason || 'Sign in with Google to post lost or found items.')}
                 />
               )}
 
@@ -433,8 +569,14 @@ export default function App() {
               civicIssues={civicIssues}
               lostFoundItems={lostFoundItems}
               onUpdateCivicStatus={handleUpdateCivicStatus}
+              onDeleteCivicIssue={handleDeleteCivicIssue}
+              onDeleteLostFoundItem={handleDeleteLostFoundItem}
+              onRestoreCivicIssue={handleRestoreCivicIssue}
+              onRestoreLostFoundItem={handleRestoreLostFoundItem}
+              deletedHistory={deletedItemsHistory}
               onResetData={handleResetData}
               onCloseAdminPortal={() => setViewMode('public')}
+              currentUser={currentUser}
             />
           </div>
         )}
@@ -449,6 +591,7 @@ export default function App() {
           existingIssues={civicIssues}
           onUpvoteAndClose={handleUpvoteAndCloseDuplicate}
           currentUser={currentUser}
+          onRequireAuth={triggerAuthPrompt}
         />
 
         {/* Civic Issue Detail Modal */}
@@ -462,6 +605,7 @@ export default function App() {
             onAddComment={handleAddCivicComment}
             onUpdateStatus={handleUpdateCivicStatus}
             currentUser={currentUser}
+            onRequireAuth={triggerAuthPrompt}
           />
         )}
 
@@ -472,6 +616,7 @@ export default function App() {
           onSubmit={handleCreateLostFoundItem}
           initialType={lostFoundModalType}
           currentUser={currentUser}
+          onRequireAuth={triggerAuthPrompt}
         />
 
         {/* Lost & Found Detail Modal */}
@@ -484,6 +629,7 @@ export default function App() {
             onAddComment={handleAddLostFoundComment}
             onSelectItem={(item) => setSelectedLostFoundItem(item)}
             currentUser={currentUser}
+            onRequireAuth={triggerAuthPrompt}
           />
         )}
 

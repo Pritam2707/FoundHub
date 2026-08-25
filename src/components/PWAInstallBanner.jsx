@@ -35,33 +35,35 @@ export default function PWAInstallBanner() {
   if (isInstalled || isDismissed) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-surface/95 backdrop-blur-md p-4 rounded-3xl border border-stone-200 shadow-soft-lg flex items-center justify-between gap-3 animate-slide-up">
-      <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pastel-lavender via-pastel-peach to-pastel-mint p-0.5 shrink-0 flex items-center justify-center">
-          <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-brand-primary font-bold">
-            <Smartphone className="w-5 h-5" />
-          </div>
-        </div>
-        <div>
-          <h4 className="text-xs font-bold text-brand-dark flex items-center space-x-1">
-            <span>Install CivicBloom PWA</span>
-            <span className="text-[9px] px-1.5 py-0.2 rounded bg-pastel-mint-light text-pastel-mint-dark font-semibold">Offline Ready</span>
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md p-3.5 sm:p-4 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-modal flex items-center justify-between gap-3 animate-fade-in">
+      <div className="flex items-center space-x-3 min-w-0">
+        <img 
+          src="/icons/icon-192.png" 
+          alt="CivicBloom App Icon" 
+          className="w-10 h-10 rounded-2xl shadow-subtle shrink-0 object-cover border border-stone-200/60 dark:border-stone-700" 
+        />
+        <div className="min-w-0">
+          <h4 className="text-xs font-bold text-stone-900 dark:text-white flex items-center space-x-1.5 truncate">
+            <span>Install CivicBloom</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 font-bold border border-emerald-200/60 dark:border-emerald-800/60">
+              Offline Ready
+            </span>
           </h4>
-          <p className="text-[11px] text-stone-500 line-clamp-1">Fast access on mobile & desktop with offline cache</p>
+          <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">Fast access on mobile & desktop with offline cache</p>
         </div>
       </div>
 
       <div className="flex items-center space-x-1.5 shrink-0">
         <button
           onClick={handleInstallClick}
-          className="px-3 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-bold hover:bg-brand-primaryHover shadow-soft-sm transition-all flex items-center space-x-1"
+          className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-subtle transition-all flex items-center space-x-1"
         >
           <Download className="w-3.5 h-3.5" />
           <span>Install</span>
         </button>
         <button
           onClick={() => setIsDismissed(true)}
-          className="p-1.5 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-all"
+          className="p-1.5 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all"
         >
           <X className="w-4 h-4" />
         </button>
