@@ -34,7 +34,7 @@ export default function LostFoundModal({
   const [locationName, setLocationName] = useState(defaultPlace.name);
   const [lat, setLat] = useState(defaultPlace.lat);
   const [lng, setLng] = useState(defaultPlace.lng);
-  const [imageUrl, setImageUrl] = useState(SAMPLE_LF_PHOTOS[1].url);
+  const [imageUrl, setImageUrl] = useState('');
   const [secretQuestion, setSecretQuestion] = useState('');
   const [reward, setReward] = useState('');
   const [contactInfo, setContactInfo] = useState('');
@@ -120,7 +120,7 @@ export default function LostFoundModal({
         lat: finalLat,
         lng: finalLng,
       },
-      imageUrl,
+      imageUrl: imageUrl.trim() || undefined,
       posterName: 'IIEST Member',
       posterContact: contactInfo.trim() || 'student@iiest.ac.in',
       secretQuestion: type === 'found' ? secretQuestion.trim() : undefined,
@@ -326,8 +326,11 @@ export default function LostFoundModal({
               </label>
               <EdgeStoreUploader
                 onUploadSuccess={(url) => setImageUrl(url)}
+                onUploadComplete={(url) => setImageUrl(url)}
+                onChange={(url) => setImageUrl(url)}
                 currentImageUrl={imageUrl}
                 category={category}
+                samplePresets={SAMPLE_LF_PHOTOS}
               />
             </div>
 

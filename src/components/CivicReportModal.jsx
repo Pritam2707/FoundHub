@@ -44,7 +44,7 @@ export default function CivicReportModal({
   const [locationName, setLocationName] = useState(defaultPlace.name);
   const [lat, setLat] = useState(defaultPlace.lat);
   const [lng, setLng] = useState(defaultPlace.lng);
-  const [imageUrl, setImageUrl] = useState(SAMPLE_PHOTOS[0].url);
+  const [imageUrl, setImageUrl] = useState('');
   const [isGettingGps, setIsGettingGps] = useState(false);
   const [gpsNote, setGpsNote] = useState('');
   const [ignoreDuplicate, setIgnoreDuplicate] = useState(false);
@@ -139,7 +139,7 @@ export default function CivicReportModal({
         lat: finalLat,
         lng: finalLng,
       },
-      imageUrl,
+      imageUrl: imageUrl.trim() || undefined,
       reporterName: 'IIEST Community',
       reporterRole: 'Resident',
       reportedAt: new Date().toISOString(),
@@ -341,8 +341,11 @@ export default function CivicReportModal({
               </label>
               <EdgeStoreUploader
                 onUploadSuccess={(url) => setImageUrl(url)}
+                onUploadComplete={(url) => setImageUrl(url)}
+                onChange={(url) => setImageUrl(url)}
                 currentImageUrl={imageUrl}
                 category={category}
+                samplePresets={SAMPLE_PHOTOS}
               />
             </div>
 

@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Search, 
-  MapPin, 
-  Clock, 
-  Sparkles, 
-  HeartHandshake, 
-  Award, 
+import {
+  Search,
+  MapPin,
+  Clock,
+  Sparkles,
+  HeartHandshake,
+  Award,
   Plus,
   ArrowRight
 } from 'lucide-react';
@@ -13,10 +13,10 @@ import { LOST_FOUND_CATEGORIES } from '../types';
 import { findMatchesForPost } from '../services/matchingEngine';
 import Icon from './Icon';
 
-export default function LostFoundView({ 
-  items, 
-  onSelectItem, 
-  onOpenCreateModal 
+export default function LostFoundView({
+  items,
+  onSelectItem,
+  onOpenCreateModal
 }) {
   const [selectedType, setSelectedType] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -55,7 +55,7 @@ export default function LostFoundView({
   const systemMatches = useMemo(() => {
     const matchesFound = [];
     const lostItems = items.filter(i => i.type === 'lost' && i.status !== 'reunited');
-    
+
     for (const lost of lostItems) {
       const candidates = findMatchesForPost(lost, items, 60);
       if (candidates.length > 0) {
@@ -85,7 +85,7 @@ export default function LostFoundView({
 
   return (
     <div className="space-y-6 pb-16">
-      
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div>
@@ -109,14 +109,14 @@ export default function LostFoundView({
             className="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-subtle"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>I Lost An Item</span>
+            <span>Lost an item</span>
           </button>
           <button
             onClick={() => onOpenCreateModal('found')}
             className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-subtle"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>I Found An Item</span>
+            <span>Found an item</span>
           </button>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function LostFoundView({
       {/* Search & Filter Bar */}
       <div className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-card dark:shadow-card-dark space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
-          
+
           {/* Search Input */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
@@ -168,41 +168,37 @@ export default function LostFoundView({
           <div className="flex items-center bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl text-xs font-medium border border-stone-200/60 dark:border-stone-700">
             <button
               onClick={() => setSelectedType('all')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                selectedType === 'all' 
-                  ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-subtle font-bold' 
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-              }`}
+              className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'all'
+                ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-subtle font-bold'
+                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                }`}
             >
               All
             </button>
             <button
               onClick={() => setSelectedType('lost')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                selectedType === 'lost' 
-                  ? 'bg-pink-600 text-white shadow-subtle font-bold' 
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-              }`}
+              className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'lost'
+                ? 'bg-pink-600 text-white shadow-subtle font-bold'
+                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                }`}
             >
               Lost Items
             </button>
             <button
               onClick={() => setSelectedType('found')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                selectedType === 'found' 
-                  ? 'bg-sky-600 text-white shadow-subtle font-bold' 
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-              }`}
+              className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'found'
+                ? 'bg-sky-600 text-white shadow-subtle font-bold'
+                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                }`}
             >
               Found Items
             </button>
             <button
               onClick={() => setSelectedType('reunited')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                selectedType === 'reunited' 
-                  ? 'bg-emerald-600 text-white shadow-subtle font-bold' 
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-              }`}
+              className={`px-3 py-1 rounded-lg transition-all ${selectedType === 'reunited'
+                ? 'bg-emerald-600 text-white shadow-subtle font-bold'
+                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                }`}
             >
               Reunited 🎉
             </button>
@@ -213,11 +209,10 @@ export default function LostFoundView({
         <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all font-semibold ${
-              selectedCategory === 'all'
-                ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900 shadow-subtle'
-                : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
-            }`}
+            className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all font-semibold ${selectedCategory === 'all'
+              ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900 shadow-subtle'
+              : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
+              }`}
           >
             All Categories
           </button>
@@ -228,11 +223,10 @@ export default function LostFoundView({
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all flex items-center space-x-1.5 font-medium border ${
-                  isSelected
-                    ? 'bg-indigo-600 border-indigo-600 text-white font-bold shadow-subtle'
-                    : 'bg-stone-50 dark:bg-stone-800/80 border-stone-200/80 dark:border-stone-700/80 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700'
-                }`}
+                className={`whitespace-nowrap px-3 py-1 rounded-lg transition-all flex items-center space-x-1.5 font-medium border ${isSelected
+                  ? 'bg-indigo-600 border-indigo-600 text-white font-bold shadow-subtle'
+                  : 'bg-stone-50 dark:bg-stone-800/80 border-stone-200/80 dark:border-stone-700/80 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700'
+                  }`}
               >
                 <Icon name={cat.icon} className="w-3.5 h-3.5" />
                 <span>{cat.label}</span>
