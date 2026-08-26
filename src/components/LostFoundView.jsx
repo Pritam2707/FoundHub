@@ -65,7 +65,7 @@ export default function LostFoundView({
     const lostItems = items.filter(i => i.type === 'lost' && i.status !== 'reunited');
 
     for (const lost of lostItems) {
-      const candidates = findMatchesForPost(lost, items, 60);
+      const candidates = findMatchesForPost(lost, items, 45);
       if (candidates.length > 0) {
         matchesFound.push({
           lostItem: lost,
@@ -305,7 +305,7 @@ export default function LostFoundView({
             const isLost = item.type === 'lost';
             const isReunited = item.status === 'reunited';
 
-            const candidateMatches = findMatchesForPost(item, items, 60);
+            const candidateMatches = findMatchesForPost(item, items, 45);
             const topMatch = candidateMatches[0];
 
             return (
