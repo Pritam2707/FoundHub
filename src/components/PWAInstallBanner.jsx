@@ -39,12 +39,12 @@ export default function PWAInstallBanner() {
       <div className="flex items-center space-x-3 min-w-0">
         <img 
           src="/icons/icon-192.png" 
-          alt="CivicBloom App Icon" 
+          alt="PinPoint App Icon" 
           className="w-10 h-10 rounded-2xl shadow-subtle shrink-0 object-cover border border-stone-200/60 dark:border-stone-700" 
         />
         <div className="min-w-0">
           <h4 className="text-xs font-bold text-stone-900 dark:text-white flex items-center space-x-1.5 truncate">
-            <span>Install CivicBloom</span>
+            <span>Install PinPoint</span>
             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 font-bold border border-emerald-200/60 dark:border-emerald-800/60">
               Offline Ready
             </span>

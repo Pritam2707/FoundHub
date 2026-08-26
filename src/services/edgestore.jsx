@@ -54,7 +54,9 @@ export async function uploadToEdgeStore(file, onProgress, edgestoreClient) {
   if (onProgress) onProgress(20);
 
   // If EdgeStore client is active and configured with working backend
-  const uploader = edgestoreClient?.FOundHUb?.upload 
+  const uploader = edgestoreClient?.pinpoint?.upload
+    || edgestoreClient?.PinPoint?.upload
+    || edgestoreClient?.FOundHUb?.upload 
     || edgestoreClient?.publicImages?.upload 
     || edgestoreClient?.foundhub?.upload 
     || edgestoreClient?.publicFiles?.upload;

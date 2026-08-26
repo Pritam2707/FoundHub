@@ -8,6 +8,12 @@ const es = initEdgeStore.create();
  * Defines public image upload bucket for civic and lost/found attachments
  */
 export const edgeStoreRouter = es.router({
+  pinpoint: es.fileBucket({
+    maxSize: 1024 * 1024 * 20, // 20MB
+  }),
+  PinPoint: es.fileBucket({
+    maxSize: 1024 * 1024 * 20, // 20MB
+  }),
   FOundHUb: es.fileBucket({
     maxSize: 1024 * 1024 * 20, // 20MB
   }),

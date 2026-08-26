@@ -68,7 +68,7 @@ export const INITIAL_CIVIC_ISSUES = [
     reportedAt: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
     verifiedCount: 19,
     statusHistory: [
-      { status: 'reported', timestamp: new Date(Date.now() - 48 * 3600 * 1000).toISOString(), note: 'Submitted via CivicBloom' },
+      { status: 'reported', timestamp: new Date(Date.now() - 48 * 3600 * 1000).toISOString(), note: 'Submitted via PinPoint' },
       { status: 'acknowledged', timestamp: new Date(Date.now() - 14 * 3600 * 1000).toISOString(), note: 'Assigned to Electrical Unit' },
     ],
     comments: []

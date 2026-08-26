@@ -1,4 +1,4 @@
-# 🌸 CivicBloom & FoundHub
+# 📍 PinPoint
 
 > **A Unified Community Platform for IIEST Shibpur Civic Infrastructure Hazards & Lost-and-Found Possessions**  
 > *Featuring 152 verified hand-surveyed campus places from [maps.iiest.wiki](https://maps.iiest.wiki), satellite aerial overlays, proximity duplicate detection, and EdgeStore cloud storage.*
@@ -15,7 +15,7 @@
 
 ```
                   ┌───────────────────────────────────────────────────────────┐
-                  │                 CivicBloom & FoundHub                     │
+                  │                         PinPoint                          │
                   └─────────────────────────────┬─────────────────────────────┘
                                                 │
                  ┌──────────────────────────────┴──────────────────────────────┐

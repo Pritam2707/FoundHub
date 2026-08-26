@@ -86,7 +86,7 @@ export async function signInWithGoogle() {
       email: 'student@iiest.ac.in',
       photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
     };
-    localStorage.setItem('civicbloom_user', JSON.stringify(demoUser));
+    localStorage.setItem('pinpoint_user', JSON.stringify(demoUser));
     return demoUser;
   }
 
@@ -98,7 +98,7 @@ export async function signInWithGoogle() {
       email: result.user.email,
       photoURL: result.user.photoURL,
     };
-    localStorage.setItem('civicbloom_user', JSON.stringify(user));
+    localStorage.setItem('pinpoint_user', JSON.stringify(user));
     return user;
   } catch (error) {
     console.error('Google Sign-In Error:', error);
@@ -110,6 +110,7 @@ export async function signOutUser() {
   if (auth) {
     await signOut(auth);
   }
+  localStorage.removeItem('pinpoint_user');
   localStorage.removeItem('civicbloom_user');
 }
 
@@ -123,16 +124,17 @@ export function subscribeToAuth(callback) {
           email: firebaseUser.email,
           photoURL: firebaseUser.photoURL,
         };
-        localStorage.setItem('civicbloom_user', JSON.stringify(user));
+        localStorage.setItem('pinpoint_user', JSON.stringify(user));
         callback(user);
       } else {
+        localStorage.removeItem('pinpoint_user');
         localStorage.removeItem('civicbloom_user');
         callback(null);
       }
     });
   } else {
     // Check localStorage fallback
-    const saved = localStorage.getItem('civicbloom_user');
+    const saved = localStorage.getItem('pinpoint_user') || localStorage.getItem('civicbloom_user');
     callback(saved ? JSON.parse(saved) : null);
     return () => {};
   }

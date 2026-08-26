@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Lock
 } from 'lucide-react';
+import PinPointLogo from './PinPointLogo';
 
 export default function Navbar({ 
   activeTab, 
@@ -49,16 +50,15 @@ export default function Navbar({
           
           {/* Logo */}
           <div 
-            className="flex items-center space-x-2.5 cursor-pointer" 
+            className="flex items-center space-x-2.5 cursor-pointer group" 
             onClick={() => setActiveTab('civic')}
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white text-xs font-bold shadow-subtle">
-              🌸
+            <div className="w-8 h-8 rounded-xl overflow-hidden shadow-subtle group-hover:scale-105 transition-transform flex items-center justify-center">
+              <PinPointLogo className="w-full h-full" />
             </div>
             <div className="flex items-center space-x-1.5">
-              <span className="font-bold text-base tracking-tight text-stone-900 dark:text-white">CivicBloom</span>
-              <span className="text-stone-300 dark:text-stone-700">/</span>
-              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">FoundHub</span>
+              <span className="font-bold text-base tracking-tight text-stone-900 dark:text-white">PinPoint</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-200/50 dark:border-indigo-800/40">IIEST</span>
             </div>
           </div>
 

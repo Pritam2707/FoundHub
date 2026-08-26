@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, ShieldCheck, Sparkles, HeartHandshake, Lock, Eye } from 'lucide-react';
+import PinPointLogo from './PinPointLogo';
 
 export default function AuthModal({ isOpen, onClose, onSignInWithGoogle, promptReason = '' }) {
   if (!isOpen) return null;
@@ -15,8 +16,8 @@ export default function AuthModal({ isOpen, onClose, onSignInWithGoogle, promptR
           <X className="w-4 h-4" />
         </button>
 
-        <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-center mx-auto mb-4 text-2xl shadow-subtle">
-          🌸
+        <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-modal flex items-center justify-center mx-auto mb-4 border border-stone-200/60 dark:border-stone-700">
+          <PinPointLogo className="w-full h-full" />
         </div>
 
         <h3 className="text-xl font-bold text-stone-900 dark:text-white mb-1.5">

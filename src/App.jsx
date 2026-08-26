@@ -44,7 +44,7 @@ export default function App() {
 
   // Theme Management (Dark Mode by default, user-controlled toggle)
   const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('civicbloom_theme');
+    const saved = localStorage.getItem('pinpoint_theme') || localStorage.getItem('civicbloom_theme');
     if (saved === 'light') return false;
     return true; // Default to Dark theme
   });
@@ -52,10 +52,10 @@ export default function App() {
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('civicbloom_theme', 'dark');
+      localStorage.setItem('pinpoint_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('civicbloom_theme', 'light');
+      localStorage.setItem('pinpoint_theme', 'light');
     }
   }, [isDark]);
 
@@ -530,7 +530,7 @@ export default function App() {
             <footer className="mt-auto border-t border-stone-200/80 dark:border-stone-800/80 bg-white/80 dark:bg-stone-900/80 py-6 px-4 text-xs text-stone-500 dark:text-stone-400">
               <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center space-x-2">
-                  <span className="font-bold text-stone-900 dark:text-white">CivicBloom & FoundHub</span>
+                  <span className="font-bold text-stone-900 dark:text-white">PinPoint</span>
                   <span>•</span>
                   <span>IIEST Shibpur Community Portal</span>
                 </div>

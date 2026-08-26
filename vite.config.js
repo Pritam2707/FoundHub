@@ -10,9 +10,9 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png', 'icons/*.svg'],
       manifest: {
         id: '/',
-        name: 'CivicBloom & FoundHub',
-        short_name: 'CivicBloom',
-        description: 'Community Civic Issue Resolution & Lost Item Platform',
+        name: 'PinPoint',
+        short_name: 'PinPoint',
+        description: 'PinPoint — Hyperlocal Campus Civic Issue Resolution & Lost Item Platform',
         theme_color: '#4F46E5',
         background_color: '#0C0E14',
         display: 'standalone',

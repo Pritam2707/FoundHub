@@ -56,7 +56,7 @@ try {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    app: 'CivicBloom & FoundHub Unified Express Server',
+    app: 'PinPoint Unified Express Server',
     environment: process.env.NODE_ENV || 'production',
     timestamp: new Date().toISOString(),
     services: {
@@ -91,7 +91,7 @@ if (fs.existsSync(distPath)) {
       <html lang="en">
         <head>
           <meta charset="utf-8"/>
-          <title>CivicBloom & FoundHub - Express Server</title>
+          <title>PinPoint - Express Server</title>
           <style>
             body { font-family: system-ui, -apple-system, sans-serif; background: #0c0e14; color: #f3f4f6; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
             .card { background: #161922; border: 1px solid #282e3e; border-radius: 1.5rem; padding: 32px; max-width: 500px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -103,7 +103,7 @@ if (fs.existsSync(distPath)) {
         </head>
         <body>
           <div class="card">
-            <h2>🌸 CivicBloom Express Server</h2>
+            <h2>📍 PinPoint Express Server</h2>
             <p>Production <code>dist/</code> folder not detected yet.</p>
             <p>To serve the full frontend app via Express, run:<br/><code>npm run build</code> then <code>npm start</code></p>
             <a class="btn" href="http://localhost:3000">Open Vite Dev Server (Port 3000) →</a>
@@ -119,7 +119,7 @@ const isDirectExecution = process.argv[1] && import.meta.url === pathToFileURL(p
 
 if (isDirectExecution) {
   app.listen(PORT, () => {
-    console.log(`🌸 CivicBloom Express App & API serving on http://localhost:${PORT}`);
+    console.log(`📍 PinPoint Express App & API serving on http://localhost:${PORT}`);
   });
 }
 

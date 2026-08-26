@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "CivicBloom & FoundHub",
-  "short_name": "CivicBloom",
-  "description": "Community Civic Issue Resolution & Lost Belonging Recovery Platform with Campus Geotagging",
+  "name": "PinPoint",
+  "short_name": "PinPoint",
+  "description": "PinPoint — Community Civic Issue Resolution & Lost Belonging Recovery Platform with Campus Geotagging",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
