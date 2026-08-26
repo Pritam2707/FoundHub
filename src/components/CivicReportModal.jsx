@@ -240,39 +240,52 @@ export default function CivicReportModal({
             )}
 
             {nearbyDuplicates.length > 0 && !ignoreDuplicate && (
-              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80">
+              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 space-y-2">
                 <div className="flex items-center space-x-2 text-amber-900 dark:text-amber-200 font-bold text-sm">
                   <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <span>Similar Issue Already Reported Here!</span>
+                  <span>Existing Hazard Reported Nearby!</span>
                 </div>
-                <p className="text-xs text-amber-800/90 dark:text-amber-300/90 mt-1">
-                  Someone reported an issue near this spot. Upvoting boosts its urgency without creating duplicates.
+                <p className="text-xs text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+                  Another report already exists near this spot. You can upvote it to increase priority, or continue reporting your separate issue.
                 </p>
-                <div className="mt-3 space-y-2">
-                  {nearbyDuplicates.map(dup => (
-                    <div key={dup.id} className="p-3 bg-white dark:bg-stone-900 rounded-xl border border-amber-200/80 dark:border-amber-800/60 flex items-center justify-between">
-                      <div className="min-w-0 pr-3">
-                        <p className="font-semibold text-xs text-stone-900 dark:text-white truncate">{dup.title}</p>
-                        <p className="text-[11px] text-stone-400">📍 {dup.location?.name} · {dup.urgencyUpvotes} Votes</p>
+                <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                  {nearbyDuplicates.map(({ issue, distanceMeters, isSameCategory }) => (
+                    <div key={issue.id} className="p-3 bg-white dark:bg-stone-900 rounded-xl border border-amber-200/80 dark:border-amber-800/60 flex items-center justify-between gap-2">
+                      <div className="min-w-0 pr-2">
+                        <div className="flex items-center space-x-1.5 mb-1">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300">
+                            {distanceMeters}m away
+                          </span>
+                          {isSameCategory && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300">
+                              Same Hazard Type
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-semibold text-xs text-stone-900 dark:text-white truncate">{issue.title}</p>
+                        <p className="text-[11px] text-stone-400">📍 {issue.location?.name || 'Campus Spot'} · {issue.urgencyUpvotes || 1} Votes</p>
                       </div>
                       <button
                         type="button"
-                        onClick={() => onUpvoteAndClose(dup.id)}
-                        className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1 shadow-sm transition-all"
+                        onClick={() => onUpvoteAndClose(issue.id)}
+                        className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow-sm transition-all"
                       >
                         <Flame className="w-3.5 h-3.5 fill-current" />
-                        <span>Upvote Instead</span>
+                        <span>Upvote</span>
                       </button>
                     </div>
                   ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIgnoreDuplicate(true)}
-                  className="mt-3 text-xs text-amber-800 dark:text-amber-300 hover:underline font-medium block text-right"
-                >
-                  Continue submitting new issue anyway →
-                </button>
+                <div className="flex justify-between items-center pt-2 border-t border-amber-200/60 dark:border-amber-800/40 text-xs">
+                  <span className="text-[11px] text-amber-700/80 dark:text-amber-400/80">Multiple reports in same location will all display as distinct pins.</span>
+                  <button
+                    type="button"
+                    onClick={() => setIgnoreDuplicate(true)}
+                    className="text-amber-800 dark:text-amber-300 hover:underline font-bold"
+                  >
+                    Report as distinct issue →
+                  </button>
+                </div>
               </div>
             )}
 

@@ -70,8 +70,8 @@ function createMinimalDotIcon(color = '#6366F1', isMajor = false) {
   });
 }
 
-// Custom Satellite Civic & Lost Pins
-function createSatelliteCivicIcon(category, isResolved, urgency) {
+// Custom Satellite Civic & Lost Pins with Cluster Badge support
+function createSatelliteCivicIcon(category, isResolved, urgency, clusterCount = 1, clusterIndex = 0) {
   const isUrgent = urgency >= 30;
   const bg = isResolved 
     ? 'linear-gradient(135deg, #10B981, #059669)' 
@@ -89,8 +89,13 @@ function createSatelliteCivicIcon(category, isResolved, urgency) {
         ${isUrgent && !isResolved ? `
           <div style="position: absolute; inset: -4px; border-radius: 12px; background: rgba(249, 115, 22, 0.5); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
         ` : ''}
-        <div style="width: 32px; height: 32px; border-radius: 10px; background: ${bg}; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px ${shadowColor}; font-size: 15px; cursor: pointer; transform: translateZ(0); transition: transform 0.15s ease;">
+        <div style="width: 32px; height: 32px; border-radius: 10px; background: ${bg}; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px ${shadowColor}; font-size: 15px; cursor: pointer; transform: translateZ(0); transition: transform 0.15s ease; position: relative;">
           ${emoji}
+          ${clusterCount > 1 ? `
+            <span style="position: absolute; top: -6px; right: -6px; background: #4338CA; color: #FFFFFF; border: 1.5px solid #FFFFFF; font-size: 9px; font-weight: 800; border-radius: 9999px; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.6);">
+              ${clusterIndex + 1}
+            </span>
+          ` : ''}
         </div>
       </div>
     `,
@@ -100,7 +105,7 @@ function createSatelliteCivicIcon(category, isResolved, urgency) {
   });
 }
 
-function createSatelliteLostFoundIcon(type, isReunited) {
+function createSatelliteLostFoundIcon(type, isReunited, clusterCount = 1, clusterIndex = 0) {
   const isLost = type === 'lost';
   const bg = isReunited 
     ? 'linear-gradient(135deg, #10B981, #059669)' 
@@ -114,16 +119,81 @@ function createSatelliteLostFoundIcon(type, isReunited) {
   return L.divIcon({
     className: 'custom-map-pin',
     html: `
-      <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">
-        <div style="width: 30px; height: 30px; border-radius: 10px; background: ${bg}; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px ${shadowColor}; font-size: 14px; cursor: pointer;">
+      <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;">
+        <div style="width: 30px; height: 30px; border-radius: 10px; background: ${bg}; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px ${shadowColor}; font-size: 14px; cursor: pointer; position: relative;">
           ${emoji}
+          ${clusterCount > 1 ? `
+            <span style="position: absolute; top: -6px; right: -6px; background: #4338CA; color: #FFFFFF; border: 1.5px solid #FFFFFF; font-size: 9px; font-weight: 800; border-radius: 9999px; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.6);">
+              ${clusterIndex + 1}
+            </span>
+          ` : ''}
         </div>
       </div>
     `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -16],
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+    popupAnchor: [0, -17],
   });
+}
+
+// Compute dispersed coordinate offsets so multiple pins at the exact same location are visibly distinct
+function computeDispersedPositions(civicList, lostFoundList) {
+  const allItems = [];
+  (civicList || []).forEach(c => {
+    if (c.location?.lat && c.location?.lng) {
+      allItems.push({ id: c.id, lat: Number(c.location.lat), lng: Number(c.location.lng), raw: c, type: 'civic' });
+    }
+  });
+  (lostFoundList || []).forEach(lf => {
+    if (lf.location?.lat && lf.location?.lng) {
+      allItems.push({ id: lf.id, lat: Number(lf.location.lat), lng: Number(lf.location.lng), raw: lf, type: 'lostfound' });
+    }
+  });
+
+  const clusters = [];
+  allItems.forEach(item => {
+    const match = clusters.find(cl => {
+      const dLat = Math.abs(cl.lat - item.lat);
+      const dLng = Math.abs(cl.lng - item.lng);
+      return dLat < 0.00012 && dLng < 0.00012; // within ~12m
+    });
+
+    if (match) {
+      match.items.push(item);
+    } else {
+      clusters.push({ lat: item.lat, lng: item.lng, items: [item] });
+    }
+  });
+
+  const positionMap = new Map();
+
+  clusters.forEach(cl => {
+    if (cl.items.length === 1) {
+      const it = cl.items[0];
+      positionMap.set(it.id, {
+        lat: it.lat,
+        lng: it.lng,
+        clusterCount: 1,
+        clusterIndex: 0,
+      });
+    } else {
+      // Disperse multiple markers in a neat radial circle around center landmark (~14m radius)
+      const radius = 0.00014;
+      cl.items.forEach((it, idx) => {
+        const angle = (2 * Math.PI * idx) / cl.items.length - Math.PI / 2;
+        const latOffset = Math.sin(angle) * radius;
+        const lngOffset = Math.cos(angle) * (radius * 1.08);
+        positionMap.set(it.id, {
+          lat: it.lat + latOffset,
+          lng: it.lng + lngOffset,
+          clusterCount: cl.items.length,
+          clusterIndex: idx,
+        });
+      });
+    }
+  });
+
+  return positionMap;
 }
 
 function MapFlyTo({ targetCoords }) {
@@ -137,8 +207,8 @@ function MapFlyTo({ targetCoords }) {
 }
 
 export default function InteractiveMap({ 
-  civicIssues, 
-  lostFoundItems, 
+  civicIssues = [], 
+  lostFoundItems = [], 
   onSelectCivicIssue, 
   onSelectLostFound,
   isDark 
@@ -182,6 +252,11 @@ export default function InteractiveMap({
   const activeCivicCount = civicIssues.length;
   const activeLostCount = lostFoundItems.filter(i => i.type === 'lost').length;
   const activeFoundCount = lostFoundItems.filter(i => i.type === 'found').length;
+
+  // Calculate radial dispersed positions for pins sharing identical or near-identical coordinates
+  const dispersedMap = useMemo(() => {
+    return computeDispersedPositions(civicIssues, lostFoundItems);
+  }, [civicIssues, lostFoundItems]);
 
   // Categories list for chips
   const categoriesList = [
@@ -502,12 +577,24 @@ export default function InteractiveMap({
               {/* User Civic Hazard Pins */}
               {showCivic && civicIssues.map((issue) => {
                 if (!issue.location?.lat || !issue.location?.lng) return null;
-                const icon = createSatelliteCivicIcon(issue.category, issue.status === 'resolved', issue.urgencyUpvotes);
+                const pos = dispersedMap.get(issue.id) || {
+                  lat: Number(issue.location.lat),
+                  lng: Number(issue.location.lng),
+                  clusterCount: 1,
+                  clusterIndex: 0
+                };
+                const icon = createSatelliteCivicIcon(
+                  issue.category, 
+                  issue.status === 'resolved', 
+                  issue.urgencyUpvotes,
+                  pos.clusterCount,
+                  pos.clusterIndex
+                );
 
                 return (
                   <Marker
                     key={issue.id}
-                    position={[issue.location.lat, issue.location.lng]}
+                    position={[pos.lat, pos.lng]}
                     icon={icon}
                   >
                     <Popup>
@@ -516,9 +603,15 @@ export default function InteractiveMap({
                           <span className="font-bold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                             {issue.category.replace('_', ' ')}
                           </span>
-                          <span className="font-semibold text-stone-500 dark:text-stone-400 capitalize">
-                            {issue.status}
-                          </span>
+                          {pos.clusterCount > 1 ? (
+                            <span className="font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
+                              Report {pos.clusterIndex + 1} of {pos.clusterCount}
+                            </span>
+                          ) : (
+                            <span className="font-semibold text-stone-500 dark:text-stone-400 capitalize">
+                              {issue.status}
+                            </span>
+                          )}
                         </div>
 
                         <h4 className="font-bold text-xs leading-snug text-stone-900 dark:text-white">
@@ -551,12 +644,23 @@ export default function InteractiveMap({
                 if (item.type === 'lost' && !showLost) return null;
                 if (item.type === 'found' && !showFound) return null;
 
-                const icon = createSatelliteLostFoundIcon(item.type, item.status === 'reunited');
+                const pos = dispersedMap.get(item.id) || {
+                  lat: Number(item.location.lat),
+                  lng: Number(item.location.lng),
+                  clusterCount: 1,
+                  clusterIndex: 0
+                };
+                const icon = createSatelliteLostFoundIcon(
+                  item.type, 
+                  item.status === 'reunited',
+                  pos.clusterCount,
+                  pos.clusterIndex
+                );
 
                 return (
                   <Marker
                     key={item.id}
-                    position={[item.location.lat, item.location.lng]}
+                    position={[pos.lat, pos.lng]}
                     icon={icon}
                   >
                     <Popup>
@@ -569,7 +673,13 @@ export default function InteractiveMap({
                           }`}>
                             {item.status === 'reunited' ? 'REUNITED 🎉' : item.type.toUpperCase()}
                           </span>
-                          <span className="capitalize text-stone-500 dark:text-stone-400">{item.category}</span>
+                          {pos.clusterCount > 1 ? (
+                            <span className="font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
+                              Item {pos.clusterIndex + 1} of {pos.clusterCount}
+                            </span>
+                          ) : (
+                            <span className="capitalize text-stone-500 dark:text-stone-400">{item.category}</span>
+                          )}
                         </div>
 
                         <h4 className="font-bold text-xs leading-snug text-stone-900 dark:text-white">
